@@ -1,2 +1,1 @@
-# gowiki
-First web app in Go: can edit/read files from server (see golang.org)
+A web server written in Go that converts SQL data into a JSON file.
