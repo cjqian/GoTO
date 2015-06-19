@@ -1,7 +1,12 @@
 <h1>JSON Generator</h1>
 
 <form action="/generate" method="POST">
-	<input type="Submit" value="Generate"/>
+	<select name="tableName">
+	{{ range .Tables }}
+		<option value={{.}}>{{.}}</option>
+	{{ end }}
+	</select>
+	<input type="Submit"/>
 </form>
 <div><pre>
 	{{.Body}}

@@ -3,7 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
-	//"fmt"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"html/template"
 	"io/ioutil"
@@ -14,23 +14,58 @@ import (
 )
 
 var (
-	addr = flag.Bool("addr", false, "find open address and print to final-port.txt")
+	addr   = flag.Bool("addr", false, "find open address and print to final-port.txt")
+	tables = getSqlTables()
 )
 
 type jsonFile struct {
-	Body string
+	Body   string
+	Tables []string
 }
 
 //generates JSON-styled output string
 func makeJson() *jsonFile {
 	body := fmtJson(getSql())
 	// else return page with no error
-	return &jsonFile{Body: body}
+	return &jsonFile{Body: body, Tables: tables}
 }
 
 //from a sql string, format json
 func fmtJson(data string) string {
 	return data
+}
+
+func getSqlTables() []string {
+	var saTables []string
+
+	//opens database
+	db, err := sql.Open("mysql", "to_user:twelve@tcp(localhost:3306)/to_development")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	rows, err := db.Query("SELECT DISTINCT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE'")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	//slice string
+	rawResult := make([]byte, 1)
+	//interface slice
+	dest := make([]interface{}, 1)
+
+	dest[0] = &rawResult
+	for rows.Next() {
+		if err := rows.Scan(dest...); err != nil {
+			log.Fatal(err)
+		}
+
+		result := string(rawResult)
+		saTables = append(saTables, result)
+	}
+
+	return saTables
+
 }
 
 //pulls sql and returns string
@@ -84,6 +119,10 @@ func getSql() string {
 
 //when generate putton is pressed, JSON string is outputted
 func generateHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fmt.Print("%+v", r)
+	tableName := r.FormValue("tableName")
+	fmt.Println(tableName)
 	file := makeJson()
 	renderTemplate(w, "index", file)
 }
@@ -91,7 +130,7 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 //serves regular homepage
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	body := ""
-	file := &jsonFile{Body: body}
+	file := &jsonFile{Body: body, Tables: tables}
 	renderTemplate(w, "index", file)
 }
 
