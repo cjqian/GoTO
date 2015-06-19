@@ -1,7 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
+	//"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -20,9 +23,63 @@ type jsonFile struct {
 
 //generates JSON-styled output string
 func makeJson() *jsonFile {
-	body := "hello, world"
+	body := fmtJson(getSql())
 	// else return page with no error
 	return &jsonFile{Body: body}
+}
+
+//from a sql string, format json
+func fmtJson(data string) string {
+	return data
+}
+
+//pulls sql and returns string
+func getSql() string {
+	sqlString := ""
+	//opens database
+	db, err := sql.Open("mysql", "to_user:twelve@tcp(localhost:3306)/to_development")
+	if err != nil {
+		panic(err.Error())
+	}
+	//gets rows and columns
+	table := "deliveryservice"
+	rows, err := db.Query("SELECT * FROM " + table)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	cols, err := rows.Columns()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	//slice string
+	rawResult := make([][]byte, len(cols))
+	var result string
+	//interface slice
+	dest := make([]interface{}, len(cols))
+	for i, _ := range rawResult {
+		dest[i] = &rawResult[i]
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(dest...); err != nil {
+			log.Fatal(err)
+		}
+
+		for _, raw := range rawResult {
+			if raw == nil {
+				result += "\\N"
+			} else {
+				result += string(raw)
+			}
+			result += "\t"
+		}
+
+		sqlString += result + "\n" + "\n"
+	}
+
+	return sqlString
 }
 
 //when generate putton is pressed, JSON string is outputted
