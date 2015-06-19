@@ -14,56 +14,63 @@ var (
 	addr = flag.Bool("addr", false, "find open address and print to final-port.txt")
 )
 
-type Page struct {
-	Title string
-	Body  []byte
+type jsonFile struct {
+	Body []byte
 }
 
+/*
 //saves a page
-func (p *Page) save() error {
+func (p *jsonFile) save() error {
 	filename := p.Title + ".txt"
 	return ioutil.WriteFile(filename, p.Body, 0600)
 }
+*/
 
 //loads a page
-func loadPage(title string) (*Page, error) {
-	filename := title + ".txt"
-	body, err := ioutil.ReadFile(filename)
-
-	// if error, return no page with error
-	if err != nil {
-		return nil, err
-	}
-
+func makeJson() *jsonFile {
+	body := "hello, world"
 	// else return page with no error
-	return &Page{Title: title, Body: body}, nil
+	return &jsonFile{Body: []byte(body)}
 }
 
+/*
 //allows a user to view a wikipage
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
+	p, err := makeJson(title)
 	if err != nil {
 		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
 		return
 	}
 
 	renderTemplate(w, "view", p)
-}
-
+}*/
+/*
 //allows user to edit a wikipage
 func editHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p, err := loadPage(title)
+	p, err := makeJson(title)
 	if err != nil {
-		p = &Page{Title: title}
+		p = &jsonFile{Title: title}
 	}
 
 	renderTemplate(w, "edit", p)
 }
+*/
+func generateHandler(w http.ResponseWriter, r *http.Request) {
+	file := makeJson()
+	renderTemplate(w, "index", file)
+}
 
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	body := ""
+	file := &jsonFile{Body: []byte(body)}
+	renderTemplate(w, "index", file)
+}
+
+/*
 //save pages
 func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	body := r.FormValue("body")
-	p := &Page{Title: title, Body: []byte(body)}
+	p := &jsonFile{Title: title, Body: []byte(body)}
 	err := p.save()
 
 	if err != nil {
@@ -72,12 +79,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	}
 
 	http.Redirect(w, r, "/view/"+title, http.StatusFound)
-}
+}*/
 
-var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+var templates = template.Must(template.ParseFiles("index.html"))
 
 //helper function
-func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+func renderTemplate(w http.ResponseWriter, tmpl string, p *jsonFile) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -85,8 +92,9 @@ func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
 }
 
 // Parse/compile regext, panic if compilation fails (no err parameter)
-var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(generate|edit|save|view)/([a-zA-Z0-9]+)$")
 
+/*
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the page title from the Request and call handler 'hn'
@@ -98,13 +106,15 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		fn(w, r, m[2])
 	}
 }
-
+*/
 func main() {
 	flag.Parse()
 
-	http.HandleFunc("/view/", makeHandler(viewHandler))
-	http.HandleFunc("/edit/", makeHandler(editHandler))
-	http.HandleFunc("/save/", makeHandler(saveHandler))
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/generate/", generateHandler)
+	//	http.HandleFunc("/view/", makeHandler(viewHandler))
+	//	http.HandleFunc("/edit/", makeHandler(editHandler))
+	//	http.HandleFunc("/save/", makeHandler(saveHandler))
 
 	if *addr {
 		l, err := net.Listen("tcp", "127.0.0.1:0")
