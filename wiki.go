@@ -1,6 +1,9 @@
+//takes in username, password, and devel
+
 package main
 
 import (
+	"./structs"
 	"database/sql"
 	"flag"
 	_ "github.com/go-sql-driver/mysql"
@@ -68,10 +71,9 @@ func getSqlTables() []string {
 	}
 
 	return saTables
-
 }
 
-//pulls sql and returns string
+//pulls sql and returns sql object
 func getSql(dbName string) string {
 	//opens database
 	db, err := sql.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
