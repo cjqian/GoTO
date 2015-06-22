@@ -6,6 +6,7 @@ import (
 	"./structs"
 	"database/sql"
 	"flag"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"html/template"
 	"io/ioutil"
@@ -80,46 +81,24 @@ func getSql(dbName string) string {
 	if err != nil {
 		panic(err.Error())
 	}
-	//gets rows and columns
-	//table := "deliveryservice"
-	rows, err := db.Query("SELECT * from " + dbName)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	cols, err := rows.Columns()
-	if err != nil {
-		panic(err.Error())
-	}
-
-	//slice string
-	rawResult := make([][]byte, len(cols))
-	result := "\n"
-	//interface slice
-	dest := make([]interface{}, len(cols))
-	for i, _ := range rawResult {
-		dest[i] = &rawResult[i]
-	}
-
-	for rows.Next() {
-		if err := rows.Scan(dest...); err != nil {
-			log.Fatal(err)
+	/*
+		//gets rows and columns
+		//table := "deliveryservice"
+		rows, err := db.Query("SELECT * from " + dbName)
+		if err != nil {
+			panic(err.Error())
 		}
 
-		//parses through each result in row
-		for _, raw := range rawResult {
-			if raw == nil {
-				result += "\\N"
-			} else {
-				result += string(raw)
-			}
-			result += "\t\t\t"
+		cols, err := rows.Columns()
+		if err != nil {
+			panic(err.Error())
 		}
-
-		result += "\n"
-	}
-
-	return result
+	*/
+	fmt.Print(structs.PrintHi())
+	asnObjs := []structs.AsnStruct{}
+	db.Query(&asnObjs, "SELECT * FROM asn")
+	fmt.Printf("%#v\n%#V", asnObjs)
+	return ""
 }
 
 //when generate putton is pressed, JSON string is outputted
