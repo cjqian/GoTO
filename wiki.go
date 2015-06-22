@@ -70,15 +70,14 @@ func getSqlTables() []string {
 
 //pulls sql and returns string
 func getSql() string {
-	sqlString := ""
 	//opens database
 	db, err := sql.Open("mysql", "to_user:twelve@tcp(localhost:3306)/to_development")
 	if err != nil {
 		panic(err.Error())
 	}
 	//gets rows and columns
-	table := "deliveryservice"
-	rows, err := db.Query("SELECT * FROM " + table)
+	//table := "deliveryservice"
+	rows, err := db.Query("SELECT * from deliveryservice")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -90,7 +89,7 @@ func getSql() string {
 
 	//slice string
 	rawResult := make([][]byte, len(cols))
-	var result string
+	result := "\n"
 	//interface slice
 	dest := make([]interface{}, len(cols))
 	for i, _ := range rawResult {
@@ -108,13 +107,13 @@ func getSql() string {
 			} else {
 				result += string(raw)
 			}
-			result += "\t"
+			result += "\t\t\t"
 		}
 
-		sqlString += result + "\n" + "\n"
+		result += "\n"
 	}
 
-	return sqlString
+	return result
 }
 
 //when generate putton is pressed, JSON string is outputted
