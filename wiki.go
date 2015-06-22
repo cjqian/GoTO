@@ -3,19 +3,22 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"html/template"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 )
 
 var (
-	addr   = flag.Bool("addr", false, "find open address and print to final-port.txt")
-	tables = getSqlTables()
+	addr        = flag.Bool("addr", false, "find open address and print to final-port.txt")
+	tables      = getSqlTables()
+	username    = os.Args[1]
+	password    = os.Args[2]
+	environment = os.Args[3]
 )
 
 type jsonFile struct {
@@ -24,8 +27,8 @@ type jsonFile struct {
 }
 
 //generates JSON-styled output string
-func makeJson() *jsonFile {
-	body := fmtJson(getSql())
+func makeJson(dbName string) *jsonFile {
+	body := fmtJson(getSql(dbName))
 	// else return page with no error
 	return &jsonFile{Body: body, Tables: tables}
 }
@@ -39,7 +42,7 @@ func getSqlTables() []string {
 	var saTables []string
 
 	//opens database
-	db, err := sql.Open("mysql", "to_user:twelve@tcp(localhost:3306)/to_development")
+	db, err := sql.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -69,15 +72,15 @@ func getSqlTables() []string {
 }
 
 //pulls sql and returns string
-func getSql() string {
+func getSql(dbName string) string {
 	//opens database
-	db, err := sql.Open("mysql", "to_user:twelve@tcp(localhost:3306)/to_development")
+	db, err := sql.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
 	if err != nil {
 		panic(err.Error())
 	}
 	//gets rows and columns
 	//table := "deliveryservice"
-	rows, err := db.Query("SELECT * from deliveryservice")
+	rows, err := db.Query("SELECT * from " + dbName)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -101,6 +104,7 @@ func getSql() string {
 			log.Fatal(err)
 		}
 
+		//parses through each result in row
 		for _, raw := range rawResult {
 			if raw == nil {
 				result += "\\N"
@@ -118,11 +122,9 @@ func getSql() string {
 
 //when generate putton is pressed, JSON string is outputted
 func generateHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Print("%+v", r)
 	tableName := r.FormValue("tableName")
-	fmt.Println(tableName)
-	file := makeJson()
+
+	file := makeJson(tableName)
 	renderTemplate(w, "index", file)
 }
 
@@ -154,6 +156,7 @@ func main() {
 	http.HandleFunc("/generate/", generateHandler)
 
 	if *addr {
+		//runs on home
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
 			log.Fatal(err)
