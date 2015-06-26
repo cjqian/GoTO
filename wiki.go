@@ -5,9 +5,13 @@ package main
 import (
 	"./structs"
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	//"github.com/jmoiron/sql"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -81,23 +85,30 @@ func getSql(dbName string) string {
 	if err != nil {
 		panic(err.Error())
 	}
-	/*
-		//gets rows and columns
-		//table := "deliveryservice"
-		rows, err := db.Query("SELECT * from " + dbName)
-		if err != nil {
-			panic(err.Error())
-		}
+	//asnObjs := structs.AsnStruct{12, 13, 12}
 
-		cols, err := rows.Columns()
-		if err != nil {
-			panic(err.Error())
+	rows, erra := db.Query("SELECT id, asn, cachegroup from asn")
+	/*for _, each := range asnObjs {
+		fmt.Printf("%#v\n", each)
+	}*/
+	if erra != nil {
+		log.Fatal(err)
+	}
+
+	for rows.Next() {
+		var a int
+		var b int
+		var c int
+		erra2 := rows.Scan(&a, &b, &c)
+		if erra2 != nil {
+			log.Fatal(err)
 		}
-	*/
-	fmt.Print(structs.PrintHi())
-	asnObjs := []structs.AsnStruct{}
-	db.Query(&asnObjs, "SELECT * FROM asn")
-	fmt.Printf("%#v\n%#V", asnObjs)
+		obj := structs.AsnStruct{a, b, c}
+		d, _ := json.MarshalIndent(obj, "", "  ")
+		fmt.Printf("%s\n", d)
+
+	}
+
 	return ""
 }
 
