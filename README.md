@@ -4,7 +4,7 @@ Progress:
 
 1. Followed golang tutorial to make a wikipage edit/view server. (6/17)
 2. Removed parts that won't be used. Now, when a button is pushed, output is generated and displayed. (6/19)
-3. Given a database table name, returns a pseud-json structure. (6/29)
+3. Given a database table name, returns a pseudo-json structure. (6/29)
 
 Modules:
 
