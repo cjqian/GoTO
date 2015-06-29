@@ -1,8 +1,7 @@
-package makeStructs
+package main
 
 import (
 	"io/ioutil"
-	"os"
 )
 
 //error checking
@@ -14,6 +13,6 @@ func check(e error) {
 
 func main() {
 	testString := []byte("hello, world!")
-	err := ioutil.WriteFile("structstmp.go", testString, 0644)
+	err := ioutil.WriteFile("structs/structstmp.go", testString, 0644)
 	check(err)
 }
