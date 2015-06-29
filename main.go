@@ -29,8 +29,11 @@ var (
 //prints JSON of argument table name in database
 func generateHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := r.URL.Path[len("/"):]
-	rows := sqlParser.GetRows(username, password, environment, tableName)
+	db := sqlParser.ConnectToDatabase(username, password, environment)
+	rows := sqlParser.GetRows(db, tableName)
 	fmt.Printf("%s", jsonFormatter.MakeJsonByteArray(rows))
+	fmt.Printf("%v", sqlParser.GetTableNames(db))
+	fmt.Printf("%v", sqlParser.GetColumnNames(db, "asn"))
 }
 
 func main() {
