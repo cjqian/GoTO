@@ -5,7 +5,8 @@
 package main
 
 import (
-	"./sqlToJson"
+	"./jsonFormatter"
+	"./sqlParser"
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -28,8 +29,8 @@ var (
 //prints JSON of argument table name in database
 func generateHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := r.URL.Path[len("/"):]
-	rows := sqlToJson.GetRows(username, password, environment, tableName)
-	fmt.Printf("%s", sqlToJson.MakeJsonByteArray(rows))
+	rows := sqlParser.GetRows(username, password, environment, tableName)
+	fmt.Printf("%s", jsonFormatter.MakeJsonByteArray(rows))
 }
 
 func main() {
