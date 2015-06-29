@@ -7,6 +7,7 @@ package main
 import (
 	"./jsonFormatter"
 	"./sqlParser"
+	"./structConstructor"
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
@@ -34,6 +35,8 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("%s", jsonFormatter.MakeJsonByteArray(rows))
 	fmt.Printf("%v", sqlParser.GetTableNames(db))
 	fmt.Printf("%v", sqlParser.GetColumnNames(db, "asn"))
+
+	structConstructor.WriteFile(structConstructor.MakeString(db), "structs/structs.go")
 }
 
 func main() {

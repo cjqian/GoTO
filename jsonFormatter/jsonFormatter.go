@@ -32,14 +32,14 @@ func MakeJsonByteArray(rows *sql.Rows) [][]byte {
 	byteArray := make([][]byte, 0)
 	for rows.Next() {
 		//currently hardcoded to "asn"
-		var a int
-		var b int
-		var c int
+		var a string
+		var b string
+		var c string
 		var d string
 		err := rows.Scan(&a, &b, &c, &d)
 		check(err)
 
-		tableInstance := structs.AsnStruct{a, b, c, d}
+		tableInstance := structs.Asn{a, b, c, d}
 		tableInstanceJson, _ := json.MarshalIndent(tableInstance, "", "  ")
 		tableInstanceJson = append(tableInstanceJson, ","...)
 		byteArray = append(byteArray, tableInstanceJson)

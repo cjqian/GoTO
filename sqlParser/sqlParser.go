@@ -52,7 +52,7 @@ func GetRows(db sql.DB, tableName string) *sql.Rows {
 
 //returns array of column names from table in database
 //returns array of table names from queried database
-func GetColumnNames(db sql.DB, colName string) []string {
+func GetColumnNames(db sql.DB, tableName string) []string {
 	var colNames []string
 
 	colRawBytes := make([]byte, 1)
@@ -60,7 +60,7 @@ func GetColumnNames(db sql.DB, colName string) []string {
 
 	colInterface[0] = &colRawBytes
 
-	rows, err := db.Query("SELECT DISTINCT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + colName + "'")
+	rows, err := db.Query("SELECT DISTINCT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "'")
 	check(err)
 
 	for rows.Next() {
