@@ -1,18 +1,13 @@
 //temporary hard-coded structs (one for each table in to_development database)
 //eventually hope to have a script generate this file at runtime
-
 package structs
-
-func PrintHi() string {
-	return "Hello, world!"
-}
 
 type AsnStruct struct {
 	Id         int
 	Asn        int
-	Cachegroup int
+	CacheGroup int
 	//originally type timestamp
-	//last_updated string
+	LastUpdated string
 }
 
 type CachegroupStruct struct {
