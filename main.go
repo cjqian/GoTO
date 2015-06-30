@@ -5,14 +5,11 @@
 package main
 
 import (
-	"./jsonFormatter"
 	"./sqlParser"
 	"./structConstructor"
+	"./structs"
 	"flag"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	"io/ioutil"
 	"log"
 	"net"
@@ -25,21 +22,22 @@ var (
 	username    = os.Args[1]
 	password    = os.Args[2]
 	environment = os.Args[3]
+	db          = sqlParser.ConnectToDatabase(username, password, environment)
 )
 
 //prints JSON of argument table name in database
 func generateHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := r.URL.Path[len("/"):]
-	db := sqlParser.ConnectToDatabase(username, password, environment)
+	//	tableName := "deliveryservice"
+	fmt.Print(tableName)
 	rows := sqlParser.GetRows(db, tableName)
-	fmt.Printf("%s", jsonFormatter.MakeJsonByteArray(rows))
-	fmt.Printf("%v", sqlParser.GetTableNames(db))
-	fmt.Printf("%v", sqlParser.GetColumnNames(db, "asn"))
-
-	structConstructor.WriteFile(structConstructor.MakeString(db), "structs/structs.go")
+	fmt.Printf("%s", structs.MapTableToJson(tableName, rows))
 }
 
 func main() {
+	//make initial files
+	structConstructor.MakeStructFiles(db)
+
 	flag.Parse()
 
 	http.HandleFunc("/", generateHandler)

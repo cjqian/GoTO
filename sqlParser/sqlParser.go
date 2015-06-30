@@ -1,10 +1,8 @@
 package sqlParser
 
 import (
-	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/jmoiron/sqlx"
 )
 
 func check(e error) {
@@ -13,15 +11,15 @@ func check(e error) {
 	}
 }
 
-func ConnectToDatabase(username string, password string, environment string) sql.DB {
-	db, err := sql.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
+func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
+	db, err := sqlx.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
 	check(err)
 
 	return *db
 }
 
 //returns array of table names from queried database
-func GetTableNames(db sql.DB) []string {
+func GetTableNames(db sqlx.DB) []string {
 	var tableNames []string
 
 	tableRawBytes := make([]byte, 1)
@@ -43,8 +41,8 @@ func GetTableNames(db sql.DB) []string {
 }
 
 //returns *Rows from queried database
-func GetRows(db sql.DB, tableName string) *sql.Rows {
-	rows, err := db.Query("SELECT * from asn")
+func GetRows(db sqlx.DB, tableName string) *sqlx.Rows {
+	rows, err := db.Queryx("SELECT * from " + tableName)
 	check(err)
 
 	return rows
@@ -52,7 +50,7 @@ func GetRows(db sql.DB, tableName string) *sql.Rows {
 
 //returns array of column names from table in database
 //returns array of table names from queried database
-func GetColumnNames(db sql.DB, tableName string) []string {
+func GetColumnNames(db sqlx.DB, tableName string) []string {
 	var colNames []string
 
 	colRawBytes := make([]byte, 1)
