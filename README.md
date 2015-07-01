@@ -17,6 +17,7 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 ## Install/Usage
 
 1. First, fork a copy of this sick repo. "GoTO" a directory of your choice and type in
+
   ```
   git clone https://github.com/cjqian/GoTO.git
   ```
