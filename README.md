@@ -7,7 +7,7 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 	* Clean up output JSON formatting and object naming
 	* Generate struct handler with OK/404 for URLs (should solve .favicon issue)
 	* Return JSON format via curl, displayed as .json output in browser
-* [0.1.2] (7/1/2015) Added variable struct generation via bash script. 
+* [0.1.2](https://github.com/cjqian/GoTO/commit/e6a30c4010ebe15cf0e5adf01691a6f434484731) (7/1/2015) Added variable struct generation via bash script. 
 * [0.1.1](https://github.com/cjqian/GoTO/commit/11914007c8ccd3d1d0eb039cc25abc1a8decfc34) (7/1/2015)
 	Documentation is updated and code is cleaned up. 
 * [0.1.0](https://github.com/cjqian/jsonserver/commit/be727ea8bb4597126c3171d9f809a0437833b9a5) (6/30/2015)
@@ -16,24 +16,26 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 
 ## Install/Usage
 1. First, fork a copy of this sick repo. "GoTO" a directory of your choice and type in:
-```
-git clone https://github.com/cjqian/GoTO.git
-```
-2. Then, make a `dbInfo` file that follows this snytax, replacing the content in 
+	```
+	git clone https://github.com/cjqian/GoTO.git
+	```
+2. Then, make a `dbInfo` file that follows this syntax, replacing the content in 
 brackets with your own data:
-```
-USERNAME="[databaseUsername]"
-PASSWORD="[databasePassword]"
-ENVIRONMENT="[databaseName]"
-```
+  ```
+  USERNAME="[databaseUsername]"
+  PASSWORD="[databasePassword]"
+  ENVIRONMENT="[databaseName]"
+  ```
 
 3. Now, you can run the server by typing this into your terminal:
-```
-./runGoto
-```
-Your system should print out `Structs Generated.` during your first run, because you shouldn't have a `structs/` folder yet. 
+  ```
+  ./runGoto
+  ```
+  Your system should print out `Structs Generated.` during your first run, 
+	because you shouldn't have a `structs/` folder yet. 
 
-In the future, if you wish to regenerate the structs package, run `./runGoto gs`. The `gs` argument will "generate structs."
+  In the future, if you wish to regenerate the structs package, run `./runGoto gs`. 
+	The `gs` argument will "generate structs."
 
 ## Known Issues
 * Favicon.ico responses are breaking the program.
