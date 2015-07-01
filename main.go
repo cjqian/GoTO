@@ -1,6 +1,6 @@
-//takes in username, password, and database
-//currently prints each instance in table to commnand line as
-//json struct
+//main.go
+//takes in username, password, and database arguments
+//runs server that handles url table searches
 
 package main
 
@@ -28,7 +28,6 @@ var (
 //prints JSON of argument table name in database
 func generateHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := r.URL.Path[len("/"):]
-	//	tableName := "deliveryservice"
 	fmt.Print(tableName)
 	rows := sqlParser.GetRows(db, tableName)
 	fmt.Printf("%s", structs.MapTableToJson(tableName, rows))
@@ -39,7 +38,6 @@ func main() {
 	structConstructor.MakeStructFiles(db)
 
 	flag.Parse()
-
 	http.HandleFunc("/", generateHandler)
 
 	if *addr {
@@ -56,5 +54,6 @@ func main() {
 		s.Serve(l)
 		return
 	}
+
 	http.ListenAndServe(":8080", nil)
 }
