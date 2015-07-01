@@ -16,24 +16,26 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 
 ## Install/Usage
 1. First, fork a copy of this sick repo. "GoTO" a directory of your choice and type in:
-```
-git clone https://github.com/cjqian/GoTO.git
-```
-2. Then, make a `dbInfo` file that follows this snytax, replacing the content in 
+	```
+	git clone https://github.com/cjqian/GoTO.git
+	```
+2. Then, make a `dbInfo` file that follows this syntax, replacing the content in 
 brackets with your own data:
-```
-USERNAME="[databaseUsername]"
-PASSWORD="[databasePassword]"
-ENVIRONMENT="[databaseName]"
-```
+  ```
+  USERNAME="[databaseUsername]"
+  PASSWORD="[databasePassword]"
+  ENVIRONMENT="[databaseName]"
+  ```
 
 3. Now, you can run the server by typing this into your terminal:
-```
-./runGoto
-```
-Your system should print out `Structs Generated.` during your first run, because you shouldn't have a `structs/` folder yet. 
+  ```
+  ./runGoto
+  ```
+  Your system should print out `Structs Generated.` during your first run, 
+	because you shouldn't have a `structs/` folder yet. 
 
-In the future, if you wish to regenerate the structs package, run `./runGoto gs`. The `gs` argument will "generate structs."
+  In the future, if you wish to regenerate the structs package, run `./runGoto gs`. 
+	The `gs` argument will "generate structs."
 
 ## Known Issues
 * Favicon.ico responses are breaking the program.
