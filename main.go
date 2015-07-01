@@ -44,9 +44,19 @@ var (
 //prints JSON of argument table name in database
 func generateHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := r.URL.Path[len("/"):]
-	fmt.Print(tableName)
-	rows := sqlParser.GetRows(db, tableName)
-	fmt.Printf("%s", structs.MapTableToJson(tableName, rows))
+
+	if !structs.ValidStruct[tableName] {
+		fmt.Printf("\"%s\" table not found.\n", tableName)
+
+		http.NotFound(w, r)
+	} else {
+		fmt.Printf("\"%s\" table found.\n", tableName)
+
+		rows := sqlParser.GetRows(db, tableName)
+		str := structs.MapTableToJson(tableName, rows)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(str))
+	}
 }
 
 func main() {

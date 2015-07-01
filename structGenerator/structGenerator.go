@@ -45,6 +45,7 @@ func main() {
 	MakeStructs()
 	MakeStructInterface()
 	MakeStructMap()
+	MakeStructValidMap()
 }
 
 //writes the struct file (structs.go), which has an object for each
@@ -90,8 +91,9 @@ func MakeStructInterface() {
 		//loops through all columns and translates to JSON
 		structInterface += "\tfor rows.Next() {\n"
 		structInterface += "\t\t rows.StructScan(&t)\n"
-		structInterface += "\t\t tmpStr, _ := json.MarshalIndent(t, \"\", \"  \")\n"
+		structInterface += "\t\t tmpStr, _ := json.Marshal(t)\n"
 		structInterface += "\t\t tStr = append(tStr[:], tmpStr[:]...)\n"
+		structInterface += "\t\t tStr = append(tStr[:], \",\"...)\n"
 		structInterface += "\t}\n\n"
 		structInterface += "\treturn tStr\n"
 		structInterface += "}\n"
@@ -99,6 +101,23 @@ func MakeStructInterface() {
 
 	//writes in relation to home directory
 	WriteFile(structInterface, "./../structs/structInterface.go")
+}
+
+//maps each table in the database to the boolean "true,"
+//used to confirm validity of URL
+func MakeStructValidMap() {
+	structValid := "package structs\n"
+
+	structValid += "var ValidStruct = map[string]bool {\n"
+
+	tableList := sqlParser.GetTableNames(db)
+	for _, table := range tableList {
+		structValid += "\t\"" + table + "\" : true,\n"
+	}
+
+	structValid += "}\n"
+
+	WriteFile(structValid, "./../structs/structValidMap.go")
 }
 
 //writes structMap.go, which has a function that maps each tableName string to

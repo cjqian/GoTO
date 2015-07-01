@@ -4,7 +4,7 @@
 source dbInfo
 
 #if "gs" (generate structs) is called or structs folder doesn't exist
-if [ "$1" == "gs" ] || [ -d "$structs" ] ; then
+if [ "$1" == "gs" ] || [ ! -d "structs" ] ; then
 	rm -rf structs
 	mkdir structs
 	cd structGenerator

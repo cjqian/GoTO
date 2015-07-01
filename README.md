@@ -36,6 +36,7 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
   because you shouldn't have a `structs/` folder yet. 
 
   In the future, if you wish to regenerate the structs package, run `./runGoto gs`. 
+  
   The `gs` argument will "generate structs."
 
 ## Known Issues
