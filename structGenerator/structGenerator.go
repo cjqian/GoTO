@@ -17,13 +17,20 @@ with the License.  You may obtain a copy of the License at
 
 //structConstructor.go
 //generates 'structs' package
-package structConstructor
+package main
 
 import (
 	"./../sqlParser"
-	"github.com/jmoiron/sqlx"
 	"io/ioutil"
+	"os"
 	"strings"
+)
+
+var (
+	username    = os.Args[1]
+	password    = os.Args[2]
+	environment = os.Args[3]
+	db          = sqlParser.ConnectToDatabase(username, password, environment)
 )
 
 //error checking
@@ -34,15 +41,15 @@ func check(e error) {
 }
 
 //writes struct, interface, and map files to structs package
-func MakeStructFiles(db sqlx.DB) {
-	MakeStructs(db)
-	MakeStructInterface(db)
-	MakeStructMap(db)
+func main() {
+	MakeStructs()
+	MakeStructInterface()
+	MakeStructMap()
 }
 
 //writes the struct file (structs.go), which has an object for each
 //database table, ith each table field as a member variable
-func MakeStructs(db sqlx.DB) {
+func MakeStructs() {
 	structStr := "package structs\n"
 	tableList := sqlParser.GetTableNames(db)
 
@@ -59,12 +66,12 @@ func MakeStructs(db sqlx.DB) {
 	}
 
 	//writes in relation to home directory
-	WriteFile(structStr, "./structs/structs.go")
+	WriteFile(structStr, "./../structs/structs.go")
 }
 
 //writes structInterface.go, which has a function that takes in *Rows and
 //returns the byte array JSON format for each table in the database
-func MakeStructInterface(db sqlx.DB) {
+func MakeStructInterface() {
 	//header, imports
 	structInterface := "package structs\n"
 	structInterface += "import (\n"
@@ -91,12 +98,12 @@ func MakeStructInterface(db sqlx.DB) {
 	}
 
 	//writes in relation to home directory
-	WriteFile(structInterface, "./structs/structInterface.go")
+	WriteFile(structInterface, "./../structs/structInterface.go")
 }
 
 //writes structMap.go, which has a function that maps each tableName string to
 //its respective function in structInterface.go
-func MakeStructMap(db sqlx.DB) {
+func MakeStructMap() {
 	//declaration, imports
 	structMap := "package structs\n"
 	structMap += "import \"github.com/jmoiron/sqlx\"\n"
@@ -116,7 +123,7 @@ func MakeStructMap(db sqlx.DB) {
 	structMap += "}\n"
 
 	//writes in relation to home directory
-	WriteFile(structMap, "./structs/structMap.go")
+	WriteFile(structMap, "./../structs/structMap.go")
 }
 
 //writes string str to fileName

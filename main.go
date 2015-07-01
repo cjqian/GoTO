@@ -23,7 +23,6 @@ package main
 
 import (
 	"./sqlParser"
-	"./structConstructor"
 	"./structs"
 	"flag"
 	"fmt"
@@ -51,9 +50,6 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	//make initial files
-	structConstructor.MakeStructFiles(db)
-
 	flag.Parse()
 	http.HandleFunc("/", generateHandler)
 

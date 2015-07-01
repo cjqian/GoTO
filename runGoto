@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#"dbInfo" file stores creds
+source dbInfo
+
+#if "gs" (generate structs) is called or structs folder doesn't exist
+if [ "$1" == "gs" ] || [ -d "$structs" ] ; then
+	rm -rf structs
+	mkdir structs
+	cd structGenerator
+	go build structGenerator.go
+	./structGenerator $USERNAME $PASSWORD $ENVIRONMENT 
+	cd ..
+	echo "Structs generated."
+fi
+
+#runs main.go
+go build main.go
+./main $USERNAME $PASSWORD $ENVIRONMENT
