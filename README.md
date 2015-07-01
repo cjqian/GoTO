@@ -1,6 +1,6 @@
-#GoTo (Golang Traffic Ops)
+#GoTO (Golang Traffic Ops)
 
-GoTo is a web API that returns JSON formatting for SQL database tables (specifically, the Comcast [Traffic Ops](http://traffic-control-cdn.net/docs/latest/development/traffic_ops.html) database). 
+GoTO is a web API that returns JSON formatting for SQL database tables (specifically, the Comcast [Traffic Ops](http://traffic-control-cdn.net/docs/latest/development/traffic_ops.html) database). 
 
 ## Releases
 * 0.2.0 (Upcoming)
