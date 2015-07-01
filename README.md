@@ -7,7 +7,7 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 	* Clean up output JSON formatting and object naming
 	* Generate struct handler with OK/404 for URLs (should solve .favicon issue)
 	* Return JSON format via curl, displayed as .json output in browser
-* 0.1.1 (7/1/2015)
+* [0.1.1](https://github.com/cjqian/GoTO/commit/11914007c8ccd3d1d0eb039cc25abc1a8decfc34) (7/1/2015)
 	Documentation is updated and code is cleaned up. 
 * [0.1.0](https://github.com/cjqian/jsonserver/commit/be727ea8bb4597126c3171d9f809a0437833b9a5) (6/30/2015)
 	Basic packages are sketched out and incorporated with the main server; everything
