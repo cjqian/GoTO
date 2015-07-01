@@ -32,10 +32,10 @@ brackets with your own data:
   ./runGoto
   ```
   Your system should print out `Structs Generated.` during your first run, 
-	because you shouldn't have a `structs/` folder yet. 
+  because you shouldn't have a `structs/` folder yet. 
 
   In the future, if you wish to regenerate the structs package, run `./runGoto gs`. 
-	The `gs` argument will "generate structs."
+  The `gs` argument will "generate structs."
 
 ## Known Issues
 * Favicon.ico responses are breaking the program.
@@ -48,9 +48,8 @@ This is the main Go program that starts the web service and listens for requests
 
 Requests are in the form:
 ```go
-url/[table_in_database]
-//for example,
-http://localhost:8000/deliveryservice
+url/[table_in_database]	//syntax
+http://localhost:8000/deliveryservice //example
 ```
 
 Which will return the JSON for the "deliveryservice" table in the database.
@@ -78,7 +77,7 @@ func GetColumnNames(db sqlx.DB, tableName string) []string;
 
 ### Struct Constructor
 
-This package (structConstructor) contructs the following package (see Structs) 
+This package (structConstructor) contructs the following package (see [Structs](https://github.com/cjqian/GoTO/#structs)) 
 by generating three .go files. This is run by adding the `gs` argument (`./runGoto gs`) or when the `structs` package is not found.
 
 ```go
@@ -103,7 +102,7 @@ func WriteFile(str string, fileName string);
 
 ### Structs
 
-This package (structs) is dynamically generated on server start from Struct Constructor (see above). 
+This package (structs) is dynamically generated on server start from [Struct Constructor](https://github.com/cjqian/GoTO/#struct-constructor). 
 There are three files:
 * structs.go
 ```go
