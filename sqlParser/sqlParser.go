@@ -11,6 +11,7 @@ func check(e error) {
 	}
 }
 
+//connects to and returns a pointer to the database
 func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
 	db, err := sqlx.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
 	check(err)
@@ -18,7 +19,7 @@ func ConnectToDatabase(username string, password string, environment string) sql
 	return *db
 }
 
-//returns array of table names from queried database
+//returns array of table name strings from queried database
 func GetTableNames(db sqlx.DB) []string {
 	var tableNames []string
 
@@ -40,7 +41,7 @@ func GetTableNames(db sqlx.DB) []string {
 	return tableNames
 }
 
-//returns *Rows from queried database
+//returns *Rows from given table (name) from queried database
 func GetRows(db sqlx.DB, tableName string) *sqlx.Rows {
 	rows, err := db.Queryx("SELECT * from " + tableName)
 	check(err)
@@ -49,7 +50,6 @@ func GetRows(db sqlx.DB, tableName string) *sqlx.Rows {
 }
 
 //returns array of column names from table in database
-//returns array of table names from queried database
 func GetColumnNames(db sqlx.DB, tableName string) []string {
 	var colNames []string
 
