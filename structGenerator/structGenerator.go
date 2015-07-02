@@ -15,7 +15,7 @@ specific language governing permissions and limitations
 under the License.
 */
 
-//structConstructor.go
+//structGenerator.go
 //generates 'structs' package
 package main
 
@@ -70,32 +70,33 @@ func MakeStructs() {
 	WriteFile(structStr, "./../structs/structs.go")
 }
 
-//writes structInterface.go, which has a function that takes in *Rows and
-//returns the byte array JSON format for each table in the database
+//writes structInterface.go, which has a function that takes in *Rows,
+//makes them into an array of []TableName structs, and encodes this
+//array into JSON format
 func MakeStructInterface() {
 	//header, imports
 	structInterface := "package structs\n"
 	structInterface += "import (\n"
 	structInterface += "\t\"github.com/jmoiron/sqlx\"\n"
 	structInterface += "\t\"encoding/json\"\n"
+	structInterface += "\t\"net/http\"\n"
 	structInterface += ")\n"
 
 	//makes a function for each object
 	tableList := sqlParser.GetTableNames(db)
 	for _, table := range tableList {
 		//function declaration
-		structInterface += "func ByteArrayFrom" + strings.Title(table) + "(rows *sqlx.Rows)  []byte {\n"
-		structInterface += "\tvar tStr []byte\n"
+		structInterface += "func EncodeStruct" + strings.Title(table) + "(rows *sqlx.Rows, w http.ResponseWriter) {\n" //make new array
+		structInterface += "\tsa := make([]" + strings.Title(table) + ", 0)\n"
 		//make new instance
-		structInterface += "\tt := " + strings.Title(table) + "{}\n"
+		structInterface += "\tt := " + strings.Title(table) + "{}\n\n"
 		//loops through all columns and translates to JSON
 		structInterface += "\tfor rows.Next() {\n"
 		structInterface += "\t\t rows.StructScan(&t)\n"
-		structInterface += "\t\t tmpStr, _ := json.Marshal(t)\n"
-		structInterface += "\t\t tStr = append(tStr[:], tmpStr[:]...)\n"
-		structInterface += "\t\t tStr = append(tStr[:], \",\"...)\n"
+		structInterface += "\t\t sa = append(sa, t)\n"
 		structInterface += "\t}\n\n"
-		structInterface += "\treturn tStr\n"
+		structInterface += "\tenc := json.NewEncoder(w)\n"
+		structInterface += "\tenc.Encode(sa)\n"
 		structInterface += "}\n"
 	}
 
@@ -125,20 +126,19 @@ func MakeStructValidMap() {
 func MakeStructMap() {
 	//declaration, imports
 	structMap := "package structs\n"
-	structMap += "import \"github.com/jmoiron/sqlx\"\n"
-	structMap += "func MapTableToJson(tableName string, rows *sqlx.Rows) []byte{\n"
+	structMap += "import (\n\t\"github.com/jmoiron/sqlx\"\n"
+	structMap += "\t\"net/http\"\n)\n"
+	structMap += "func MapTableToJson(tableName string, rows *sqlx.Rows, w http.ResponseWriter) {\n"
 
 	//each table has a case mapping name with structInterface function
 	tableList := sqlParser.GetTableNames(db)
 	for _, table := range tableList {
 		structMap += "\tif tableName == \"" + table + "\"{\n"
-		structMap += "\t\ttStr := ByteArrayFrom" + strings.Title(table) + "(rows)\n"
-		structMap += "\t\treturn tStr\n"
+		structMap += "\t\tEncodeStruct" + strings.Title(table) + "(rows, w)\n"
 		structMap += "\t}\n"
 	}
 
 	//if invalid table, returns error
-	structMap += "return []byte(\"ERROR: TABLE NOT FOUND\")\n"
 	structMap += "}\n"
 
 	//writes in relation to home directory

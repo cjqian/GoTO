@@ -5,8 +5,8 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 ## Releases
 * 0.2.0 (Upcoming)
 	* Clean up output JSON formatting and object naming
-	* Generate struct handler with OK/404 for URLs (should solve .favicon issue)
-	* Return JSON format via curl, displayed as .json output in browser
+	* Generate struct handler with OK/404 for URLs (should solve .favicon issue) [Done!]
+	* Return JSON format via curl, displayed as .json output in browser [Done!]
 * [0.1.2](https://github.com/cjqian/GoTO/commit/e6a30c4010ebe15cf0e5adf01691a6f434484731) (7/1/2015) Added variable struct generation via bash script. 
 * [0.1.1](https://github.com/cjqian/GoTO/commit/11914007c8ccd3d1d0eb039cc25abc1a8decfc34) (7/1/2015)
 	Documentation is updated and code is cleaned up. 
@@ -39,22 +39,26 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
   
   The `gs` argument will "generate structs."
 
-## Known Issues
-* Favicon.ico responses are breaking the program.
-* Inaccurate JSON formatting.
-
+## Syntax 
+Note: not yet implemented!
+* `read/` should display a list of all tables in the database.
+* `read/[tableName]` should display table fields and corresponding type in JSON.	
+* `encode/[tableName]` should output JSON of all rows in table.
+* CRUD functionality to come (ex. `create/`, `delete/`, potentially?)
+ 
 ## Packages
 ### Main.go
 
 This is the main Go program that starts the web service and listens for requests. 
 
-Requests are in the form:
+Requests are currently in the form:
 ```
 url/[table_in_database]	//syntax
 localhost:8000/deliveryservice //example
 ```
 
 Which will return the JSON for the "deliveryservice" table in the database.
+This will be changed after (Syntax)[http://www.github.com/cjqian/GoTO/#Syntax] is implemented.
 
 The program takes in three parameters: the username, password and database. 
 
@@ -85,32 +89,39 @@ func GetColumnNames(db sqlx.DB, tableName string) []string {
 } 
 ```
 
-### Struct Constructor
+### Struct Generator
 
-This package (structConstructor) contructs the following package (see [Structs](https://github.com/cjqian/GoTO/#structs)) 
-by generating three .go files. This is run by adding the `gs` argument (`./runGoto gs`) or when the `structs` package is not found.
+This package (structGenerator) contructs the following package (see [Structs](https://github.com/cjqian/GoTO/#structs)) 
+by generating .go files. This is run by adding the `gs` argument (`./runGoto gs`) or when the `structs` package is not found.
+
+Alternatively, this could be built on its own by running (from the home directory)
+```
+go build structGenerator/structGenerator.go 
+./structGenerator/structGenerator [databaseUsername] [databasePassword] [databaseName]
+```
 
 ```go
 //writes struct, interface, and map files to structs package
-func MakeStructFiles(db sqlx.DB) {
+func MakeStructFiles() {
 	...
 }
 
 //writes the struct file, which has an object for each database table, 
 //with each table field as a member variable
-func MakeStructs(db sqlx.DB) {
+func MakeStructs() {
 	...
 }
 
 //writes structInterface.go, which has functions that take in *Rows and
-//return the byte array JSON format for each table in the database
-func MakeStructInterface(db sqlx.DB) {
+//parses them into an array of structs, writing the resulting JSON 
+//encoding to the writer argument. has one function for each table.
+func MakeStructInterface() {
 	...
 }
 
 //writes structMap.go, which has one function that maps each tableName string
 //to its respective function in structInterface.go`
-func MakeStructMap(db sqlx.DB) {
+func MakeStructMap() {
 	...
 }
 
@@ -121,7 +132,7 @@ func WriteFile(str string, fileName string) {
 ```
 ### Structs
 
-This package (structs) is dynamically generated on server start from [Struct Constructor](https://github.com/cjqian/GoTO/#struct-constructor). 
+This package (structs) is dynamically generated on server start from [Struct Generator](https://github.com/cjqian/GoTO/#struct-generator). 
 There are three files:
 * structs.go
 ```go
@@ -133,29 +144,30 @@ type [TableName] struct{
 
 * structInterface.go
 ```go
-func ByteArrayFrom[Table Name](rows *sqlx.Rows) []byte{
-	var tStr []byte
+func EncodeStruct[Table Name](rows *sqlx.Rows, w http.ResponseWriter) {
+	//Makes an array of structs of type [Table Name]
+	sa := make([][Table Name], 0)
 
 	//creates a new [Table Name] object (defined in Structs) and scans
-	//contents of given rows into its fields. appends the JSON 
-	//representation to a tStr byte array representing the entire table
+	//contents of given rows into its fields, appending the object
+	//to the object array
 	t := [Table Name]{}
 	for rows.Next() {
 		rows.StructScan(&t)
-		tmpStr, _ := json.MarshalIndent(t, "", "  ")
-		tStr = append(tStr[:], tmpStr[:]...)
+		sa = append(sa, t)
 	}
 
-	return tStr
+	//encodes the resultant array JSON representation to the writer
+	enc := json.NewEncoder(w)
+	enc.Encode(sa)
 }
 ```
 
 * structMap.go
 ```go
-func MapTableToJson(tableName string, rows *sqlx.Rows) []byte{
+func MapTableToJson(tableName string, rows *sqlx.Rows, w http.ResponseWriter) []byte{
 	if tableName == [Table Name]{
-		tStr := ByteArrayFromAsn(row)
-		return tStr
+		EncodeStruct[Table Name](rows, w)
 	}
 	...
 }
