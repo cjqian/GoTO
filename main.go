@@ -54,8 +54,8 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\"%s\" table found.\n", tableName)
 
 		rows := sqlParser.GetRows(db, tableName)
-		structs.MapTableToJson(tableName, rows, w)
 		w.Header().Set("Content-Type", "application/json")
+		structs.MapTableToJson(tableName, rows, w)
 	}
 }
 

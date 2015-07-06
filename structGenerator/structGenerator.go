@@ -23,6 +23,7 @@ import (
 	"./../sqlParser"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -58,9 +59,15 @@ func MakeStructs() {
 	for _, table := range tableList {
 		structStr += "type " + strings.Title(table) + " struct {\n"
 		columnList := sqlParser.GetColumnNames(db, table)
-		for _, column := range columnList {
-			//they are all string types, hope that's cool
-			structStr += "\t" + strings.Title(column) + "\t\t" + "string\n"
+		columnTypes := sqlParser.GetColumnTypes(db, table)
+		for idx, column := range columnList {
+			jsonDec := " `json:\"" + column + "\"`\n"
+
+			//all before (
+			re := regexp.MustCompile("^[^(]+")
+
+			colType := sqlParser.MapColType(re.FindString(columnTypes[idx]))
+			structStr += "\t" + strings.Title(column) + "\t\t " + colType + jsonDec
 		}
 
 		structStr += "}\n"
@@ -104,7 +111,7 @@ func MakeStructInterface() {
 	WriteFile(structInterface, "./../structs/structInterface.go")
 }
 
-//maps each table in the database to the boolean "true,"
+//writes structValidMap.go, which maps each table in the database to the boolean "true,"
 //used to confirm validity of URL
 func MakeStructValidMap() {
 	structValid := "package structs\n"

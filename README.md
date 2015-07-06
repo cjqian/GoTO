@@ -3,7 +3,9 @@
 GoTO is a web API that returns JSON formatting for SQL database tables (specifically, the Comcast [Traffic Ops](http://traffic-control-cdn.net/docs/latest/development/traffic_ops.html) database). 
 
 ## Releases
-* 0.2.0 (Upcoming)
+* 0.2.1 (Upcoming)
+	* Dynamic queries in URL
+* 0.2.0 (7/6/2015)
 	* Clean up output JSON formatting and object naming
 	* Generate struct handler with OK/404 for URLs (should solve .favicon issue) [Done!]
 	* Return JSON format via curl, displayed as .json output in browser [Done!]
@@ -39,6 +41,23 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
   
   The `gs` argument will "generate structs."
 
+
+## Debugging
+If you're getting errors in the Install process or you happen to be Mark, make sure you can answer "yes" to
+the following questions. If you're still having issues, that really sucks.
+1. Do you have the most recent version of Go [installed](https://golang.org/doc/install)? 
+	Try uninstalling/reinstalling.
+2. Did you make a `dbInfo` file? (See step two of the [Install](http://github.com/cjqian/GoTO#installusage) notes.)
+3. Are you running `./runGoto` from your `GoTO/` folder and not a subfolder?
+4. Alternatively, if you're not using the `./runGoto` command, did you make sure to add arguments when running the build? 
+	```
+	./[program] [username] [password] [environment]
+	``` 
+	See `./runGoto` for execution examples. Also, are your database credentials correct?
+5. Is your `mysql` up and running? Type `mysql` into your terminal to verify.
+6. Do you have the latest version of this code? Run `git pull` to get an update. 
+	Also, make sure you've checked out `master` branch and not a development branch.
+
 ## Syntax 
 Note: not yet implemented!
 * `read/` should display a list of all tables in the database.
@@ -58,6 +77,10 @@ localhost:8000/deliveryservice //example
 ```
 
 Which will return the JSON for the "deliveryservice" table in the database.
+
+If the table queried exists in the database (checked against structValidMap), the program will print "[table name] found."
+Else, the program will print "[table name] is not found."
+
 This will be changed after (Syntax)[http://www.github.com/cjqian/GoTO/#Syntax] is implemented.
 
 The program takes in three parameters: the username, password and database. 
@@ -67,6 +90,8 @@ The program takes in three parameters: the username, password and database.
 This package (sqlParser) contains the following public methods for interacting with the database. 
 Also, I'm using the [SQLX library](http://jmoiron.github.io/sqlx/).
 
+There are two files:
+* `sqlParser.go` has the following SQL database API.
 ```go
 // connects to and returns a pointer to the database
 func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
@@ -87,6 +112,29 @@ func GetRows(db sqlx.DB, tableName string) *sqlx.Rows {
 func GetColumnNames(db sqlx.DB, tableName string) []string {
 	...
 } 
+
+//returns array of column types from table (name) in database
+func GetColumnTypes(db sqlx.DB, tableName string) []string {
+	...
+}
+```
+
+* `SQLTypeMap.go` contains mappings from SQL data types to Golang datatypes
+```go
+//given a SQL data type, returns the name of the equivalent Golang data type
+//unless it's not in the SQLTypeMap, in which case it returns string
+//note: timestamp is intentionally mapped to a string
+func MapColType(SQLType string) string {
+	...
+}
+
+//map of SQL types to Golang types
+var SQLTypeMap = map[string]string{
+	//format
+	[SQL Type]	: 	[Golang Type]
+	//example
+	"bigint"	:	"int64"
+}
 ```
 
 ### Struct Generator
@@ -119,6 +167,12 @@ func MakeStructInterface() {
 	...
 }
 
+//writes structValidMap.go, which maps each table in the database to the boolean "true,"
+//used to confirm validity of URL
+func MakeStructValidMap() {
+	...
+}
+
 //writes structMap.go, which has one function that maps each tableName string
 //to its respective function in structInterface.go`
 func MakeStructMap() {
@@ -133,8 +187,9 @@ func WriteFile(str string, fileName string) {
 ### Structs
 
 This package (structs) is dynamically generated on server start from [Struct Generator](https://github.com/cjqian/GoTO/#struct-generator). 
-There are three files:
-* structs.go
+These files are made:
+
+* `structs.go`
 ```go
 type [TableName] struct{
 	[Table Field]	[Field Type]
@@ -142,7 +197,7 @@ type [TableName] struct{
 	...
 ```
 
-* structInterface.go
+* `structInterface.go`
 ```go
 func EncodeStruct[Table Name](rows *sqlx.Rows, w http.ResponseWriter) {
 	//Makes an array of structs of type [Table Name]
@@ -163,12 +218,20 @@ func EncodeStruct[Table Name](rows *sqlx.Rows, w http.ResponseWriter) {
 }
 ```
 
-* structMap.go
+* `structMap.go`
 ```go
 func MapTableToJson(tableName string, rows *sqlx.Rows, w http.ResponseWriter) []byte{
 	if tableName == [Table Name]{
 		EncodeStruct[Table Name](rows, w)
 	}
 	...
+}
+```
+
+* `structValidMap.go`
+```go
+var ValidStruct = map[string]bool {
+	//format
+	[Table Name] : true,
 }
 ```

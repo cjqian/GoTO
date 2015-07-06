@@ -47,7 +47,7 @@ func GetTableNames(db sqlx.DB) []string {
 
 	tableInterface[0] = &tableRawBytes
 
-	rows, err := db.Query("SELECT DISTINCT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE'")
+	rows, err := db.Query("SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE' and TABLE_SCHEMA='to_development'")
 	check(err)
 
 	for rows.Next() {
@@ -77,7 +77,7 @@ func GetColumnNames(db sqlx.DB, tableName string) []string {
 
 	colInterface[0] = &colRawBytes
 
-	rows, err := db.Query("SELECT DISTINCT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "'")
+	rows, err := db.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='to_development'")
 	check(err)
 
 	for rows.Next() {
@@ -88,4 +88,26 @@ func GetColumnNames(db sqlx.DB, tableName string) []string {
 	}
 
 	return colNames
+}
+
+//returns array of column names from table in database
+func GetColumnTypes(db sqlx.DB, tableName string) []string {
+	var colTypes []string
+
+	colRawBytes := make([]byte, 1)
+	colInterface := make([]interface{}, 1)
+
+	colInterface[0] = &colRawBytes
+
+	rows, err := db.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='to_development'")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(colInterface...)
+		check(err)
+
+		colTypes = append(colTypes, string(colRawBytes))
+	}
+
+	return colTypes
 }
