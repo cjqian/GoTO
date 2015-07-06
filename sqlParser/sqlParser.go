@@ -24,6 +24,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var (
+	globalEnvironment = ""
+)
+
 func check(e error) {
 	if e != nil {
 		panic(e)
@@ -34,6 +38,9 @@ func check(e error) {
 func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
 	db, err := sqlx.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
 	check(err)
+
+	//set globalEnvironment
+	globalEnvironment = environment
 
 	return *db
 }
@@ -47,7 +54,7 @@ func GetTableNames(db sqlx.DB) []string {
 
 	tableInterface[0] = &tableRawBytes
 
-	rows, err := db.Query("SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE' and TABLE_SCHEMA='to_development'")
+	rows, err := db.Query("SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE' and TABLE_SCHEMA='" + globalEnvironment + "'")
 	check(err)
 
 	for rows.Next() {
@@ -77,7 +84,7 @@ func GetColumnNames(db sqlx.DB, tableName string) []string {
 
 	colInterface[0] = &colRawBytes
 
-	rows, err := db.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='to_development'")
+	rows, err := db.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
 	check(err)
 
 	for rows.Next() {
@@ -99,7 +106,7 @@ func GetColumnTypes(db sqlx.DB, tableName string) []string {
 
 	colInterface[0] = &colRawBytes
 
-	rows, err := db.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='to_development'")
+	rows, err := db.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
 	check(err)
 
 	for rows.Next() {
