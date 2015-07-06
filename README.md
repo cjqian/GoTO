@@ -5,7 +5,7 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 ## Releases
 * 0.2.1 (Upcoming)
 	* Dynamic queries in URL
-* 0.2.0 (7/6/2015)
+* [0.2.0](https://github.com/cjqian/GoTO/commit/7b0ed143dc8287a6405947eb80f8c1338d54f3de) (7/6/2015)
 	* Clean up output JSON formatting and object naming
 	* Generate struct handler with OK/404 for URLs (should solve .favicon issue) [Done!]
 	* Return JSON format via curl, displayed as .json output in browser [Done!]
@@ -46,18 +46,19 @@ GoTO is a web API that returns JSON formatting for SQL database tables (specific
 ## Debugging
 If you're getting errors in the Install process or you happen to be Mark, make sure you can answer "yes" to
 the following questions. If you're still having issues, that really sucks.
-1. Do you have the most recent version of Go [installed](https://golang.org/doc/install)? 
-	Try uninstalling/reinstalling.
-2. Did you make a `dbInfo` file? (See step two of the [Install](http://github.com/cjqian/GoTO#installusage) notes.)
-3. Are you running `./runGoto` from your `GoTO/` folder and not a subfolder?
-4. Alternatively, if you're not using the `./runGoto` command, did you make sure to add arguments when running the build? 
-	```
-	./[program] [username] [password] [environment]
-	``` 
-	See `./runGoto` for execution examples. Also, are your database credentials correct?
-5. Is your `mysql` up and running? Type `mysql` into your terminal to verify.
-6. Do you have the latest version of this code? Run `git pull` to get an update. 
-	Also, make sure you've checked out `master` branch and not a development branch.
+* Do you have the most recent version of Go [installed](https://golang.org/doc/install)? Try uninstalling/reinstalling.
+* Did you make a `dbInfo` file? (See step two of the [Install](http://github.com/cjqian/GoTO#installusage) notes.)
+* Are you running `./runGoto` from your `GoTO/` folder and not a subfolder?
+* Alternatively, if you're not using the `./runGoto` command, did you make sure to add arguments when running the build? 
+  
+  ```
+  ./[program] [username] [password] [environment]
+  ``` 
+  
+  See `./runGoto` for execution examples. Also, are your database credentials correct?
+* Is your `mysql` up and running? Type `mysql` into your terminal to verify.
+* Do you have the latest version of this code? Run `git pull` to get an update. 
+* Also, make sure you've checked out `master` branch and not a development branch.
 
 ## Syntax 
 Note: not yet implemented!
@@ -150,7 +151,7 @@ go build structGenerator/structGenerator.go
 ```
 
 ```go
-//writes struct, interface, and map files to structs package
+//writes struct, interface, valid map and map files to structs package
 func MakeStructFiles() {
 	...
 }
