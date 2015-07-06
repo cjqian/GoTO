@@ -41,12 +41,22 @@ var (
 	db          = sqlParser.ConnectToDatabase(username, password, environment)
 )
 
-//prints JSON of argument table name in database
+//returns JSON of argument table name in database
 func generateHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := r.URL.Path[len("/"):]
-	fmt.Print(tableName)
-	rows := sqlParser.GetRows(db, tableName)
-	fmt.Printf("%s", structs.MapTableToJson(tableName, rows))
+
+	//only valid names are existing tables in db
+	if !structs.ValidStruct[tableName] {
+		fmt.Printf("\"%s\" table not found.\n", tableName)
+
+		http.NotFound(w, r)
+	} else {
+		fmt.Printf("\"%s\" table found.\n", tableName)
+
+		rows := sqlParser.GetRows(db, tableName)
+		w.Header().Set("Content-Type", "application/json")
+		structs.MapTableToJson(tableName, rows, w)
+	}
 }
 
 func main() {
