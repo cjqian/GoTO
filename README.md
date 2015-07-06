@@ -50,10 +50,10 @@ the following questions. If you're still having issues, that really sucks.
 * Did you make a `dbInfo` file? (See step two of the [Install](http://github.com/cjqian/GoTO#installusage) notes.)
 * Are you running `./runGoto` from your `GoTO/` folder and not a subfolder?
 * Alternatively, if you're not using the `./runGoto` command, did you make sure to add arguments when running the build? 
-	```
-	./[program] [username] [password] [environment]
-	``` 
-	See `./runGoto` for execution examples. Also, are your database credentials correct?
+  ```
+  ./[program] [username] [password] [environment]
+  ``` 
+  See `./runGoto` for execution examples. Also, are your database credentials correct?
 * Is your `mysql` up and running? Type `mysql` into your terminal to verify.
 * Do you have the latest version of this code? Run `git pull` to get an update. 
 * Also, make sure you've checked out `master` branch and not a development branch.
@@ -149,7 +149,7 @@ go build structGenerator/structGenerator.go
 ```
 
 ```go
-//writes struct, interface, and map files to structs package
+//writes struct, interface, valid map and map files to structs package
 func MakeStructFiles() {
 	...
 }
