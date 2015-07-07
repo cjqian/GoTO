@@ -36,7 +36,7 @@ func check(e error) {
 
 //connects to and returns a pointer to the database
 func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
-	db, err := sqlx.Open("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
+	db, err := sqlx.Connect("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
 	check(err)
 
 	//set globalEnvironment
