@@ -20,8 +20,10 @@ under the License.
 package sqlParser
 
 import (
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"os"
 )
 
 var (
@@ -31,7 +33,8 @@ var (
 
 func check(e error) {
 	if e != nil {
-		panic(e)
+		fmt.Printf("Exiting: %v \n", e)
+		os.Exit(1)
 	}
 }
 
