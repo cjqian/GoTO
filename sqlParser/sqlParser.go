@@ -68,11 +68,19 @@ func GetTableNames(db sqlx.DB) []string {
 }
 
 //returns *Rows from given table (name) from queried database
-func GetRows(db sqlx.DB, tableName string) *sqlx.Rows {
-	rows, err := db.Queryx("SELECT * from " + tableName)
-	check(err)
+func GetRows(db sqlx.DB, tableName string, request string) *sqlx.Rows {
+	if request == "" {
+		rows, err := db.Queryx("SELECT * from " + tableName)
+		check(err)
+		return rows
+	} else {
+		rows, err := db.Queryx("SELECT " + request + " from " + tableName)
+		check(err)
+		return rows
+	}
 
-	return rows
+	//this should never happen
+	return nil
 }
 
 //returns array of column names from table in database

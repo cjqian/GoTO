@@ -30,6 +30,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	//	"net/url"
+	"./urlParser"
 	"os"
 )
 
@@ -43,7 +45,11 @@ var (
 
 //returns JSON of argument table name in database
 func generateHandler(w http.ResponseWriter, r *http.Request) {
-	tableName := r.URL.Path[len("/"):]
+	path := r.URL.Path[1:]
+	request := urlParser.ParseURL(path)
+
+	tableName := request.TableName
+	fields := request.Fields
 
 	//only valid names are existing tables in db
 	if !structs.ValidStruct[tableName] {
@@ -53,7 +59,7 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Printf("\"%s\" table found.\n", tableName)
 
-		rows := sqlParser.GetRows(db, tableName)
+		rows := sqlParser.GetRows(db, tableName, fields)
 		w.Header().Set("Content-Type", "application/json")
 		structs.MapTableToJson(tableName, rows, w)
 	}
