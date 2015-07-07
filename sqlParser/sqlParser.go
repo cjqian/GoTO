@@ -26,6 +26,7 @@ import (
 
 var (
 	globalEnvironment = ""
+	globalDB          sqlx.DB
 )
 
 func check(e error) {
@@ -41,12 +42,13 @@ func ConnectToDatabase(username string, password string, environment string) sql
 
 	//set globalEnvironment
 	globalEnvironment = environment
+	globalDB = *db
 
 	return *db
 }
 
 //returns array of table name strings from queried database
-func GetTableNames(db sqlx.DB) []string {
+func GetTableNames() []string {
 	var tableNames []string
 
 	tableRawBytes := make([]byte, 1)
@@ -54,7 +56,7 @@ func GetTableNames(db sqlx.DB) []string {
 
 	tableInterface[0] = &tableRawBytes
 
-	rows, err := db.Query("SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE' and TABLE_SCHEMA='" + globalEnvironment + "'")
+	rows, err := globalDB.Query("SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE' and TABLE_SCHEMA='" + globalEnvironment + "'")
 	check(err)
 
 	for rows.Next() {
@@ -68,13 +70,13 @@ func GetTableNames(db sqlx.DB) []string {
 }
 
 //returns *Rows from given table (name) from queried database
-func GetRows(db sqlx.DB, tableName string, request string) *sqlx.Rows {
+func GetRows(tableName string, request string) *sqlx.Rows {
 	if request == "" {
-		rows, err := db.Queryx("SELECT * from " + tableName)
+		rows, err := globalDB.Queryx("SELECT * from " + tableName)
 		check(err)
 		return rows
 	} else {
-		rows, err := db.Queryx("SELECT " + request + " from " + tableName)
+		rows, err := globalDB.Queryx("SELECT " + request + " from " + tableName)
 		check(err)
 		return rows
 	}
@@ -84,7 +86,7 @@ func GetRows(db sqlx.DB, tableName string, request string) *sqlx.Rows {
 }
 
 //returns array of column names from table in database
-func GetColumnNames(db sqlx.DB, tableName string) []string {
+func GetColumnNames(tableName string) []string {
 	var colNames []string
 
 	colRawBytes := make([]byte, 1)
@@ -92,7 +94,7 @@ func GetColumnNames(db sqlx.DB, tableName string) []string {
 
 	colInterface[0] = &colRawBytes
 
-	rows, err := db.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
+	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
 	check(err)
 
 	for rows.Next() {
@@ -106,7 +108,7 @@ func GetColumnNames(db sqlx.DB, tableName string) []string {
 }
 
 //returns array of column names from table in database
-func GetColumnTypes(db sqlx.DB, tableName string) []string {
+func GetColumnTypes(tableName string) []string {
 	var colTypes []string
 
 	colRawBytes := make([]byte, 1)
@@ -114,7 +116,7 @@ func GetColumnTypes(db sqlx.DB, tableName string) []string {
 
 	colInterface[0] = &colRawBytes
 
-	rows, err := db.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
+	rows, err := globalDB.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
 	check(err)
 
 	for rows.Next() {
@@ -125,4 +127,26 @@ func GetColumnTypes(db sqlx.DB, tableName string) []string {
 	}
 
 	return colTypes
+}
+
+//returns array of column names from table in database
+func GetColumnType(columnName string) string {
+	var colTypes []string
+
+	colRawBytes := make([]byte, 1)
+	colInterface := make([]interface{}, 1)
+
+	colInterface[0] = &colRawBytes
+
+	rows, err := globalDB.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE COLUMN_NAME='" + columnName + "'")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(colInterface...)
+		check(err)
+
+		colTypes = append(colTypes, string(colRawBytes))
+	}
+
+	return colTypes[0]
 }

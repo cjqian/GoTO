@@ -23,6 +23,7 @@ package main
 
 import (
 	"./sqlParser"
+	"./structFilter"
 	"./structs"
 	"flag"
 	"fmt"
@@ -30,6 +31,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 	//	"net/url"
 	"./urlParser"
 	"os"
@@ -59,9 +61,17 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Printf("\"%s\" table found.\n", tableName)
 
-		rows := sqlParser.GetRows(db, tableName, fields)
+		rows := sqlParser.GetRows(tableName, fields)
 		w.Header().Set("Content-Type", "application/json")
-		structs.MapTableToJson(tableName, rows, w)
+
+		if fields == "" {
+			fmt.Printf("No fields\n")
+			structs.MapTableToJson(tableName, rows, w)
+		} else {
+			fmt.Printf("%s\n", fields)
+			fieldArray := strings.Split(fields, ",")
+			structFilter.MapCustomTableToJson(tableName, rows, w, fieldArray)
+		}
 	}
 }
 

@@ -20,10 +20,9 @@ under the License.
 package main
 
 import (
-	"./../sqlParser"
-	"io/ioutil"
+	"./sqlParser"
+	"./structBuilder"
 	"os"
-	"regexp"
 	"strings"
 )
 
@@ -53,28 +52,18 @@ func main() {
 //database table, ith each table field as a member variable
 func MakeStructs() {
 	structStr := "package structs\n"
-	tableList := sqlParser.GetTableNames(db)
+	tableList := sqlParser.GetTableNames()
 
 	//add a struct for each table
 	for _, table := range tableList {
-		structStr += "type " + strings.Title(table) + " struct {\n"
-		columnList := sqlParser.GetColumnNames(db, table)
-		columnTypes := sqlParser.GetColumnTypes(db, table)
-		for idx, column := range columnList {
-			jsonDec := " `json:\"" + column + "\"`\n"
+		columnList := sqlParser.GetColumnNames(table)
+		columnTypes := sqlParser.GetColumnTypes(table)
 
-			//all before (
-			re := regexp.MustCompile("^[^(]+")
-
-			colType := sqlParser.MapColType(re.FindString(columnTypes[idx]))
-			structStr += "\t" + strings.Title(column) + "\t\t " + colType + jsonDec
-		}
-
-		structStr += "}\n"
+		structStr += structBuilder.MakeStructStr(table, columnList, columnTypes)
 	}
 
 	//writes in relation to home directory
-	WriteFile(structStr, "./../structs/structs.go")
+	structBuilder.WriteFile(structStr, "./structs/structs.go")
 }
 
 //writes structInterface.go, which has a function that takes in *Rows,
@@ -90,7 +79,7 @@ func MakeStructInterface() {
 	structInterface += ")\n"
 
 	//makes a function for each object
-	tableList := sqlParser.GetTableNames(db)
+	tableList := sqlParser.GetTableNames()
 	for _, table := range tableList {
 		//function declaration
 		structInterface += "func EncodeStruct" + strings.Title(table) + "(rows *sqlx.Rows, w http.ResponseWriter) {\n" //make new array
@@ -108,7 +97,7 @@ func MakeStructInterface() {
 	}
 
 	//writes in relation to home directory
-	WriteFile(structInterface, "./../structs/structInterface.go")
+	structBuilder.WriteFile(structInterface, "./structs/structInterface.go")
 }
 
 //writes structValidMap.go, which maps each table in the database to the boolean "true,"
@@ -118,14 +107,14 @@ func MakeStructValidMap() {
 
 	structValid += "var ValidStruct = map[string]bool {\n"
 
-	tableList := sqlParser.GetTableNames(db)
+	tableList := sqlParser.GetTableNames()
 	for _, table := range tableList {
 		structValid += "\t\"" + table + "\" : true,\n"
 	}
 
 	structValid += "}\n"
 
-	WriteFile(structValid, "./../structs/structValidMap.go")
+	structBuilder.WriteFile(structValid, "./structs/structValidMap.go")
 }
 
 //writes structMap.go, which has a function that maps each tableName string to
@@ -138,7 +127,7 @@ func MakeStructMap() {
 	structMap += "func MapTableToJson(tableName string, rows *sqlx.Rows, w http.ResponseWriter) {\n"
 
 	//each table has a case mapping name with structInterface function
-	tableList := sqlParser.GetTableNames(db)
+	tableList := sqlParser.GetTableNames()
 	for _, table := range tableList {
 		structMap += "\tif tableName == \"" + table + "\"{\n"
 		structMap += "\t\tEncodeStruct" + strings.Title(table) + "(rows, w)\n"
@@ -149,12 +138,5 @@ func MakeStructMap() {
 	structMap += "}\n"
 
 	//writes in relation to home directory
-	WriteFile(structMap, "./../structs/structMap.go")
-}
-
-//writes string str to fileName
-func WriteFile(str string, fileName string) {
-	strByte := []byte(str)
-	err := ioutil.WriteFile(fileName, strByte, 0644)
-	check(err)
+	structBuilder.WriteFile(structMap, "./structs/structMap.go")
 }

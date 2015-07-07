@@ -1,7 +1,7 @@
 package urlParser
 
 import (
-	"fmt"
+	"errors"
 	"regexp"
 	"strings"
 )
@@ -35,13 +35,15 @@ func ParseURL(url string) Request {
 			if r.TableName == "" {
 				r.TableName = section[6:]
 			} else {
-				fmt.Printf("Error: multiple table name requests defined.")
+				err := errors.New("Error: multiple table name requests defined.")
+				check(err)
 			}
 		} else if matchFields {
 			if r.Fields == "" {
 				r.Fields = section[7:]
 			} else {
-				fmt.Printf("Error: multiple fields defined.")
+				err := errors.New("Error: multiple fields defined.")
+				check(err)
 			}
 		}
 
