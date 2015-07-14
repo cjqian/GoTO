@@ -88,6 +88,34 @@ func GetRows(tableName string, request string) *sqlx.Rows {
 	return nil
 }
 
+func GetCustomRows(query string) *sqlx.Rows {
+	rows, err := globalDB.Queryx(query)
+	check(err)
+	return rows
+}
+
+//returns array of column names from table in database
+func GetCustomColumnNames(query string) []string {
+	var colNames []string
+
+	colRawBytes := make([]byte, 1)
+	colInterface := make([]interface{}, 1)
+
+	colInterface[0] = &colRawBytes
+
+	rows, err := globalDB.Query(query)
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(colInterface...)
+		check(err)
+
+		colNames = append(colNames, string(colRawBytes))
+	}
+
+	return colNames
+}
+
 //returns array of column names from table in database
 func GetColumnNames(tableName string) []string {
 	var colNames []string

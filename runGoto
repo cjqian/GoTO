@@ -7,10 +7,8 @@ source dbInfo
 if [ "$1" == "gs" ] || [ ! -d "structs" ] ; then
 	rm -rf structs
 	mkdir structs
-	cd structGenerator
 	go build structGenerator.go
 	./structGenerator $USERNAME $PASSWORD $ENVIRONMENT 
-	cd ..
 	echo "Structs generated."
 fi
 
