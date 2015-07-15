@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo "Directories:"
+
+for f in structDirectory/queries/*
+do
+	echo $f
+	cat $f
+	echo ""
+done
+
+echo "Done."

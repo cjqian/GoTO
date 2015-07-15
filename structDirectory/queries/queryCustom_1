@@ -1,0 +1,1 @@
+select server.id, cachegroup.name FROM server JOIN cachegroup ON server.cachegroup=cachegroup.id;

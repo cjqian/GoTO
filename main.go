@@ -23,15 +23,14 @@ package main
 
 import (
 	"./sqlParser"
-	"./structFilter"
+	"./structCustom"
 	"./structs"
 	"flag"
-	"fmt"
+	//	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	//	"net/url"
 	"./urlParser"
 	"os"
@@ -51,27 +50,29 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 	request := urlParser.ParseURL(path)
 
 	tableName := request.TableName
-	fields := request.Fields
+	tableID := request.Id
 
-	//only valid names are existing tables in db
-	if !structs.ValidStruct[tableName] {
-		fmt.Printf("\"%s\" table not found.\n", tableName)
-
+	//checks table name
+	if !structs.ValidStruct[tableName] && tableName != "custom" {
 		http.NotFound(w, r)
+	} else if tableName == "custom" {
+		if structCustom.ValidCustomStruct(tableID) {
+			queryStr, err := ioutil.ReadFile("structDirectory/queries/queryCustom_" + request.Id)
+			if err != nil {
+				panic(err)
+			}
+			rows := sqlParser.GetCustomRows(string(queryStr))
+			w.Header().Set("Content-Type", "application/json")
+			structCustom.MapCustomTableToJson(request.Id, rows, w)
+		} else {
+			http.NotFound(w, r)
+		}
 	} else {
-		fmt.Printf("\"%s\" table found.\n", tableName)
-
-		rows := sqlParser.GetRows(tableName, fields)
+		rows := sqlParser.GetRows(tableName)
 		w.Header().Set("Content-Type", "application/json")
 
-		if fields == "" {
-			fmt.Printf("No fields\n")
-			structs.MapTableToJson(tableName, rows, w)
-		} else {
-			fmt.Printf("%s\n", fields)
-			fieldArray := strings.Split(fields, ",")
-			structFilter.MapCustomTableToJson(tableName, rows, w, fieldArray)
-		}
+		structs.MapTableToJson(tableName, rows, w)
+
 	}
 }
 

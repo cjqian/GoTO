@@ -8,7 +8,7 @@ import (
 
 type Request struct {
 	TableName string
-	Fields    string
+	Id        string
 }
 
 func check(e error) {
@@ -27,8 +27,7 @@ func ParseURL(url string) Request {
 		matchTableName, err := regexp.MatchString("^table=", section)
 		check(err)
 
-		//then check fields
-		matchFields, err := regexp.MatchString("^fields=", section)
+		matchId, err := regexp.MatchString("^id=", section)
 		check(err)
 
 		if matchTableName {
@@ -38,15 +37,14 @@ func ParseURL(url string) Request {
 				err := errors.New("Error: multiple table name requests defined.")
 				check(err)
 			}
-		} else if matchFields {
-			if r.Fields == "" {
-				r.Fields = section[7:]
+		} else if matchId {
+			if r.Id == "" {
+				r.Id = section[3:]
 			} else {
-				err := errors.New("Error: multiple fields defined.")
+				err := errors.New("Error: multiple IDs defined.")
 				check(err)
 			}
 		}
-
 	}
 
 	return *r

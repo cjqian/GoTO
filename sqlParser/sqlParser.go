@@ -73,19 +73,10 @@ func GetTableNames() []string {
 }
 
 //returns *Rows from given table (name) from queried database
-func GetRows(tableName string, request string) *sqlx.Rows {
-	if request == "" {
-		rows, err := globalDB.Queryx("SELECT * from " + tableName)
-		check(err)
-		return rows
-	} else {
-		rows, err := globalDB.Queryx("SELECT " + request + " from " + tableName)
-		check(err)
-		return rows
-	}
-
-	//this should never happen
-	return nil
+func GetRows(tableName string) *sqlx.Rows {
+	rows, err := globalDB.Queryx("SELECT * from " + tableName)
+	check(err)
+	return rows
 }
 
 func GetCustomRows(query string) *sqlx.Rows {
