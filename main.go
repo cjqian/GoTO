@@ -26,7 +26,7 @@ import (
 	"./structCustom"
 	"./structs"
 	"flag"
-	//	"fmt"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -58,6 +58,7 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 	} else if tableName == "custom" {
 		if structCustom.ValidCustomStruct(tableID) {
 			queryStr, err := ioutil.ReadFile("structDirectory/queries/queryCustom_" + request.Id)
+			fmt.Printf("Reading query:\n%s\n ", queryStr)
 			if err != nil {
 				panic(err)
 			}

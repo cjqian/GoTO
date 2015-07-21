@@ -1,184 +1,47 @@
 package main
 
 import (
+	"./queryBuilder"
 	"./sqlParser"
 	"./structBuilder"
 	"./structDirectory"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"strconv"
 	"strings"
 )
 
-type Query struct {
-	QueryStr string
-	Tables   []string
-	Fields   []string
+func WriteQuery(q queryBuilder.Query, id string) {
+	structBuilder.WriteFile(q.QueryStr, "./structDirectory/queries/queryCustom_"+id)
 }
-
-func queryTable() string {
-	tables := sqlParser.GetTableNames()
-
-	//print options
-	fmt.Printf("%s\n", "Select a table:")
-	for idx, table := range tables {
-		fmt.Printf("[%d] %s\n", idx, table)
-	}
-
-	//get option
-	var optionNum int
-	_, err := fmt.Scanln(&optionNum)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//debug
-	fmt.Println(tables[optionNum])
-
-	return tables[optionNum]
-}
-
-func queryCols(tableName string) []string {
-	cols := sqlParser.GetColumnNames(tableName)
-
-	//print options
-	fmt.Printf("Select columns from %s (separated by comma)\n", tableName)
-	for idx, col := range cols {
-		fmt.Printf("[%d] %s\n", idx, col)
-	}
-
-	//get option
-	var optionStr string
-	_, err := fmt.Scanln(&optionStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	optionsStr := strings.Split(optionStr, ",")
-
-	var colArray = make([]string, len(optionsStr))
-	for idx, opt := range optionsStr {
-		optionNum, _ := strconv.Atoi(opt)
-		colArray[idx] = cols[optionNum]
-	}
-
-	//debug
-	fmt.Println(colArray)
-
-	return colArray
-}
-
-//can only join with one
-func queryJoin(tableName string) string {
-	joinQuery := "select referenced_table_name from information_schema.referential_constraints where table_name='" + tableName + "';"
-	neighborTables := sqlParser.GetCustomColumnNames(joinQuery)
-
-	fmt.Println("Select table to join:")
-	for idx, table := range neighborTables {
-		fmt.Printf("[%d] %s\n", idx, table)
-	}
-
-	var joinNum int
-	_, err := fmt.Scanln(&joinNum)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//debug
-	fmt.Println(neighborTables[joinNum])
-
-	return neighborTables[joinNum]
-}
-
-func queryEquiv(table1 string, table2 string) string {
-	table1cols := sqlParser.GetColumnNames(table1)
-	table2cols := sqlParser.GetColumnNames(table2)
-
-	//select 1
-	fmt.Printf("%s\n", "Select equivalent statement part 1:")
-	for idx, col := range table1cols {
-		fmt.Printf("[%d] %s.%s\n", idx, table1, col)
-	}
-
-	var option1 int
-	_, err := fmt.Scanln(&option1)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//select 2
-	fmt.Printf("%s\n", "Select equivalent statement part 2:")
-	for idx, col := range table2cols {
-		fmt.Printf("[%d] %s.%s\n", idx, table2, col)
-	}
-
-	var option2 int
-	_, err2 := fmt.Scanln(&option2)
-	if err2 != nil {
-		log.Fatal(err)
-	}
-
-	equivStmt := table1 + "." + table1cols[option1] + "=" + table2 + "." + table2cols[option2]
-
-	//debug
-	fmt.Println(equivStmt)
-
-	return equivStmt
-
-}
-
-//writes to tmpQuery
-func makeQuery(id string) Query {
-	query := "select "
-
-	table1 := queryTable()
-	cols1 := queryCols(table1)
-
-	for _, col := range cols1 {
-		query += table1 + "." + col + ", "
-	}
-
-	table2 := queryJoin(table1)
-	cols2 := queryCols(table2)
-
-	for _, col := range cols2 {
-		query += table2 + "." + col + ", "
-	}
-
-	//remove comma
-	query = query[:len(query)-2] + " "
-
-	//add join
-	query += "FROM " + table1 + " JOIN " + table2
-
-	//equiv
-	query += " ON " + queryEquiv(table1, table2) + ";"
-
-	fmt.Println(query)
-
-	qTables := []string{table1, table2}
-	qFields := append(cols1, cols2...)
-
-	q := Query{query, qTables, qFields}
-
-	structBuilder.WriteFile(query, "./structDirectory/queries/queryCustom_"+id)
-
-	return q
-}
-
-func MakeStructCustom(q Query, id string) {
+func WriteStructCustom(q queryBuilder.Query, id string) {
 	structStr := "//GENERATED PACKAGE\n"
 	structStr += "package structCustom\n"
 
 	fieldTypes := GetFieldTypes(q.Fields)
-
 	structStr += structBuilder.MakeStructStr("Custom"+id, q.Fields, fieldTypes)
 	structBuilder.WriteFile(structStr, "./structCustom/structCustom_"+id+".go")
 }
 
-func MakeEncodeStructCustom(id string) {
+func WriteJoinStructCustom(q queryBuilder.Query, id string) {
+	structStr := "//GENERATED PACKAGE\n"
+	structStr += "package structCustom\n"
+
+	fields := make([]string, len(q.Fields))
+	fieldEnum := make([]string, len(q.Fields))
+	for idx, field := range q.Fields {
+		sArray := strings.Split(field, ".")
+		fields[idx] = sArray[1]
+		fieldEnum[idx] = sArray[0] + "_" + sArray[1]
+	}
+
+	fieldTypes := GetFieldTypes(fields)
+
+	structStr += structBuilder.MakeStructStr("Custom"+id, fieldEnum, fieldTypes)
+	structBuilder.WriteFile(structStr, "./structCustom/structCustom_"+id+".go")
+}
+
+func WriteEncodeStructCustom(id string) {
 	encodeBytes, _ := ioutil.ReadFile("./structCustom/structCustomInterface.go")
 	encodeStr := string(encodeBytes)
 
@@ -203,6 +66,7 @@ func UpdateStructCustomMap(id string) {
 
 	structBuilder.WriteFile(encodeStr, "./structCustom/structCustomMap.go")
 }
+
 func GetFieldTypes(fields []string) []string {
 	ta := make([]string, len(fields))
 
@@ -212,18 +76,23 @@ func GetFieldTypes(fields []string) []string {
 
 	return ta
 }
-func makeStruct() {
-	id := structDirectory.UpdateCustom()
-	q := makeQuery(id)
 
-	MakeStructCustom(q, id)
-	MakeEncodeStructCustom(id)
+func GenerateCustomStruct() {
+	id := structDirectory.UpdateCustom()
+	q := queryBuilder.MakeQuery()
+	WriteQuery(q, id)
+	if q.IsJoinType {
+		WriteJoinStructCustom(q, id)
+	} else {
+		WriteStructCustom(q, id)
+	}
+	WriteEncodeStructCustom(id)
 	UpdateStructCustomMap(id)
-	fmt.Printf("Custrom struct generated.\n Struct ID is: %s\n", id)
+	fmt.Printf("Custom struct generated.\n Struct ID is: %s\n", id)
 }
 
 func main() {
 	//connect to database
 	sqlParser.ConnectToDatabase(os.Args[1], os.Args[2], os.Args[3])
-	makeStruct()
+	GenerateCustomStruct()
 }

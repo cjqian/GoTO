@@ -2,6 +2,7 @@ package structBuilder
 
 import (
 	"./../sqlParser"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -34,6 +35,7 @@ func MakeStructStr(tableName string, fields []string, fieldTypes []string) strin
 	}
 
 	structStr += "}\n"
+	fmt.Println(structStr)
 	return structStr
 }
 

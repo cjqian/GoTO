@@ -108,6 +108,29 @@ func GetCustomColumnNames(query string) []string {
 }
 
 //returns array of column names from table in database
+func GetTableColumnNames(tableName string) []string {
+	var colNames []string
+
+	colRawBytes := make([]byte, 1)
+	colInterface := make([]interface{}, 1)
+
+	colInterface[0] = &colRawBytes
+
+	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(colInterface...)
+		check(err)
+
+		colName := tableName + "." + string(colRawBytes)
+		colNames = append(colNames, colName)
+	}
+
+	return colNames
+}
+
+//returns array of column names from table in database
 func GetColumnNames(tableName string) []string {
 	var colNames []string
 
@@ -152,6 +175,7 @@ func GetColumnTypes(tableName string) []string {
 }
 
 //returns array of column names from table in database
+//MUST be of type table.column!!
 func GetColumnType(columnName string) string {
 	var colTypes []string
 

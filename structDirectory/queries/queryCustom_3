@@ -1,1 +1,0 @@
-select profile_parameter.profile, profile_parameter.parameter, profile_parameter.last_updated, parameter.id, parameter.name, parameter.config_file, parameter.value FROM profile_parameter JOIN parameter ON profile_parameter.parameter=parameter.id;
