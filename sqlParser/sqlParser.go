@@ -38,6 +38,31 @@ func check(e error) {
 	}
 }
 
+func AddTableToDatabase(newCol interface{}, tableName string) {
+	m := newCol.(map[string]interface{})
+	query := "INSERT INTO " + tableName + " ("
+	keyStr := ""
+	valueStr := ""
+
+	for k, v := range m {
+		keyStr += k + ","
+		valueStr += "'" + TypeToString(v) + "',"
+	}
+
+	keyStr = keyStr[:len(keyStr)-1]
+	valueStr = valueStr[:len(valueStr)-1]
+
+	query += keyStr + ") VALUES ( " + valueStr + " );"
+	_, err := globalDB.Query(query)
+	check(err)
+}
+
+func AddTablesToDatabase(newCols []interface{}, tableName string) {
+	for _, col := range newCols {
+		AddTableToDatabase(col, tableName)
+	}
+}
+
 //connects to and returns a pointer to the database
 func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
 	db, err := sqlx.Connect("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)

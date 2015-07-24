@@ -22,6 +22,7 @@ under the License.
 package main
 
 import (
+	"./jsonParser"
 	"./sqlParser"
 	"./structCustom"
 	"./structs"
@@ -49,31 +50,37 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[1:]
 	request := urlParser.ParseURL(path)
 
-	tableName := request.TableName
-	tableID := request.Id
+	if r.Method == "GET" {
+		tableName := request.TableName
+		tableID := request.Id
 
-	//checks table name
-	if !structs.ValidStruct[tableName] && tableName != "custom" {
-		http.NotFound(w, r)
-	} else if tableName == "custom" {
-		if structCustom.ValidCustomStruct(tableID) {
-			queryStr, err := ioutil.ReadFile("structDirectory/queries/queryCustom_" + request.Id)
-			fmt.Printf("Reading query:\n%s\n ", queryStr)
-			if err != nil {
-				panic(err)
-			}
-			rows := sqlParser.GetCustomRows(string(queryStr))
-			w.Header().Set("Content-Type", "application/json")
-			structCustom.MapCustomTableToJson(request.Id, rows, w)
-		} else {
+		//checks table name
+		if !structs.ValidStruct[tableName] && tableName != "custom" {
 			http.NotFound(w, r)
+		} else if tableName == "custom" {
+			if structCustom.ValidCustomStruct(tableID) {
+				queryStr, err := ioutil.ReadFile("structDirectory/queries/queryCustom_" + request.Id)
+				fmt.Printf("Reading query:\n%s\n ", queryStr)
+				if err != nil {
+					panic(err)
+				}
+				rows := sqlParser.GetCustomRows(string(queryStr))
+				w.Header().Set("Content-Type", "application/json")
+				structCustom.MapCustomTableToJson(request.Id, rows, w)
+			} else {
+				http.NotFound(w, r)
+			}
+		} else {
+			rows := sqlParser.GetRows(tableName)
+			w.Header().Set("Content-Type", "application/json")
+
+			structs.MapTableToJson(tableName, rows, w)
+
 		}
-	} else {
-		rows := sqlParser.GetRows(tableName)
-		w.Header().Set("Content-Type", "application/json")
-
-		structs.MapTableToJson(tableName, rows, w)
-
+	} else if r.Method == "POST" {
+		filename := r.PostFormValue("filename")
+		fmt.Println("Filename is: ", filename)
+		jsonParser.AddJsonCols(request.TableName, filename)
 	}
 }
 
