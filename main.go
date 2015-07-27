@@ -24,7 +24,7 @@ package main
 import (
 	"./jsonParser"
 	"./sqlParser"
-	"./structCustom"
+	"./structGenerator"
 	"./structs"
 	"flag"
 	"fmt"
@@ -42,6 +42,7 @@ var (
 	username    = os.Args[1]
 	password    = os.Args[2]
 	environment = os.Args[3]
+	genStructs  = os.Args[4]
 	db          = sqlParser.ConnectToDatabase(username, password, environment)
 )
 
@@ -49,27 +50,14 @@ var (
 func generateHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[1:]
 	request := urlParser.ParseURL(path)
+	tableName := request.TableName
+	tableParameters := request.Parameters
+	tableUpdateParameters := request.UpdateParameters
 
 	if r.Method == "GET" {
-		tableName := request.TableName
-		tableID := request.Id
-
 		//checks table name
-		if !structs.ValidStruct[tableName] && tableName != "custom" {
+		if !structs.ValidStruct[tableName] {
 			http.NotFound(w, r)
-		} else if tableName == "custom" {
-			if structCustom.ValidCustomStruct(tableID) {
-				queryStr, err := ioutil.ReadFile("structDirectory/queries/queryCustom_" + request.Id)
-				fmt.Printf("Reading query:\n%s\n ", queryStr)
-				if err != nil {
-					panic(err)
-				}
-				rows := sqlParser.GetCustomRows(string(queryStr))
-				w.Header().Set("Content-Type", "application/json")
-				structCustom.MapCustomTableToJson(request.Id, rows, w)
-			} else {
-				http.NotFound(w, r)
-			}
 		} else {
 			rows := sqlParser.GetRows(tableName)
 			w.Header().Set("Content-Type", "application/json")
@@ -79,12 +67,21 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if r.Method == "POST" {
 		filename := r.PostFormValue("filename")
-		fmt.Println("Filename is: ", filename)
-		jsonParser.AddJsonCols(request.TableName, filename)
+		jsonParser.AddJsonCols(tableName, filename)
+	} else if r.Method == "DELETE" {
+		sqlParser.DeleteFromTable(tableName, tableParameters)
+	} else if r.Method == "PUT" {
+		fmt.Println(tableUpdateParameters)
+		sqlParser.UpdateTable(tableName, tableParameters, tableUpdateParameters)
 	}
 }
 
 func main() {
+	if genStructs == "1" {
+		structGenerator.InitStructFiles()
+	}
+
+	fmt.Println("Starting server.")
 	flag.Parse()
 	http.HandleFunc("/", generateHandler)
 

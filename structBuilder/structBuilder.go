@@ -2,7 +2,7 @@ package structBuilder
 
 import (
 	"./../sqlParser"
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -35,8 +35,28 @@ func MakeStructStr(tableName string, fields []string, fieldTypes []string) strin
 	}
 
 	structStr += "}\n"
-	fmt.Println(structStr)
 	return structStr
+}
+
+func AddToFile(fileName string, addString string) {
+	cur := ReadFile(fileName)
+	cur += addString
+	WriteFile(cur, fileName)
+}
+
+func AddToMethodInFile(fileName string, addString string) {
+	cur := ReadFile(fileName)
+	cur = cur[:len(cur)-2]
+	cur += addString
+	cur += "}\n"
+	WriteFile(cur, fileName)
+}
+
+func ReadFile(fileName string) string {
+	file, err := ioutil.ReadFile(fileName)
+	check(err)
+
+	return string(file)
 }
 
 //writes string str to fileName

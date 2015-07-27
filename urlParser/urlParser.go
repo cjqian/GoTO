@@ -2,13 +2,16 @@ package urlParser
 
 import (
 	"errors"
+	//"fmt"
 	"regexp"
 	"strings"
 )
 
 type Request struct {
-	TableName string
-	Id        string
+	TableName        string
+	Id               string
+	Parameters       map[string]string
+	UpdateParameters map[string]string
 }
 
 func check(e error) {
@@ -19,35 +22,33 @@ func check(e error) {
 
 //makes a new request given a string url
 func ParseURL(url string) Request {
-	r := new(Request)
+	r := Request{"", "", map[string]string{}, map[string]string{}}
+
+	url = strings.ToLower(url)
 	urlSections := strings.Split(url, "/")
 
 	for _, section := range urlSections {
 		//first check if match table name
-		matchTableName, err := regexp.MatchString("^table=", section)
-		check(err)
-
-		matchId, err := regexp.MatchString("^id=", section)
-		check(err)
-
-		if matchTableName {
+		if matchTableName, err := regexp.MatchString("^table=", section); matchTableName && err == nil {
 			if r.TableName == "" {
 				r.TableName = section[6:]
 			} else {
 				err := errors.New("Error: multiple table name requests defined.")
 				check(err)
 			}
-		} else if matchId {
-			if r.Id == "" {
-				r.Id = section[3:]
-			} else {
-				err := errors.New("Error: multiple IDs defined.")
-				check(err)
+
+		} else if matchUpdate, err := regexp.MatchString("^new:", section); matchUpdate && err == nil {
+			ua := strings.Split(section[4:], ",")
+			for _, param := range ua {
+				pa := strings.Split(param, "=")
+				r.UpdateParameters[pa[0]] = pa[1]
 			}
+		} else if matchEquiv, err := regexp.MatchString("^.*=", section); matchEquiv && err == nil {
+			ea := strings.Split(section, "=")
+			r.Parameters[ea[0]] = ea[1]
 		}
 	}
-
-	return *r
+	return r
 }
 
 /*

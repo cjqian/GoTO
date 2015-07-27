@@ -75,6 +75,57 @@ func ConnectToDatabase(username string, password string, environment string) sql
 	return *db
 }
 
+//deletes given parameters
+func DeleteFromTable(tableName string, parameters map[string]string) {
+	query := "delete from " + tableName
+
+	if len(parameters) > 0 {
+		query += " where "
+
+		for k, v := range parameters {
+			query += k + "=" + v + " and "
+		}
+
+		query = query[:len(query)-4]
+	}
+
+	_, err := globalDB.Query(query)
+	check(err)
+
+	fmt.Println(query)
+}
+
+func UpdateTable(tableName string, parameters map[string]string, updateParameters map[string]string) {
+	query := "update " + tableName
+
+	if len(updateParameters) > 0 {
+		query += " set "
+
+		for k, v := range updateParameters {
+			query += k + "='" + v + "', "
+		}
+
+		query = query[:len(query)-2]
+	}
+
+	if len(parameters) > 0 {
+		query += " where "
+
+		for k, v := range parameters {
+			query += k + "='" + v + "' and "
+		}
+
+		query = query[:len(query)-4]
+	}
+	//_, err := globalDB.Query(query)
+	//check(err)
+	_, err := globalDB.Query(query)
+	check(err)
+
+	fmt.Println(query)
+
+}
+
 //returns array of table name strings from queried database
 func GetTableNames() []string {
 	var tableNames []string
@@ -95,6 +146,28 @@ func GetTableNames() []string {
 	}
 
 	return tableNames
+}
+
+func GetViewNames() []string {
+	var tableNames []string
+
+	tableRawBytes := make([]byte, 1)
+	tableInterface := make([]interface{}, 1)
+
+	tableInterface[0] = &tableRawBytes
+
+	rows, err := globalDB.Query("SELECT TABLE_NAME FROM information_schema.views")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(tableInterface...)
+		check(err)
+
+		tableNames = append(tableNames, string(tableRawBytes))
+	}
+
+	return tableNames
+
 }
 
 //returns *Rows from given table (name) from queried database
@@ -220,4 +293,23 @@ func GetColumnType(columnName string) string {
 	}
 
 	return colTypes[0]
+}
+
+func MakeView(queryName string, query string) {
+	qStr := "create view " + queryName + " as " + query
+	_, err := globalDB.Query(qStr)
+	check(err)
+}
+
+func DeleteView(viewName string) {
+	qStr := "drop view " + viewName
+	_, err := globalDB.Query(qStr)
+	check(err)
+}
+
+func DeleteViews() {
+	for _, view := range GetViewNames() {
+		fmt.Println(view)
+		DeleteView(view)
+	}
 }
