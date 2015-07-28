@@ -170,17 +170,47 @@ func GetViewNames() []string {
 
 }
 
-//returns *Rows from given table (name) from queried database
-func GetRows(tableName string) *sqlx.Rows {
+//returns interface from given table (name) from queried database
+func GetRowArray(tableName string) []map[string]interface{} {
 	rows, err := globalDB.Queryx("SELECT * from " + tableName)
 	check(err)
-	return rows
+
+	rowArray := make([]map[string]interface{}, 0)
+
+	for rows.Next() {
+		results := make(map[string]interface{}, 0)
+		err = rows.MapScan(results)
+
+		for k, v := range results {
+			if b, ok := v.([]byte); ok {
+				results[k] = string(b)
+			}
+		}
+
+		rowArray = append(rowArray, results)
+	}
+	return rowArray
 }
 
-func GetCustomRows(query string) *sqlx.Rows {
+//returns interface from given table (name) from queried database
+func GetCustomRowArray(query string) []map[string]interface{} {
 	rows, err := globalDB.Queryx(query)
 	check(err)
-	return rows
+
+	rowArray := make([]map[string]interface{}, 0)
+
+	for rows.Next() {
+		results := make(map[string]interface{}, 0)
+		err = rows.MapScan(results)
+
+		for k, v := range results {
+			if b, ok := v.([]byte); ok {
+				results[k] = string(b)
+			}
+		}
+		rowArray = append(rowArray, results)
+	}
+	return rowArray
 }
 
 //returns array of column names from table in database

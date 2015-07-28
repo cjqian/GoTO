@@ -24,8 +24,8 @@ package main
 import (
 	"./jsonParser"
 	"./sqlParser"
-	"./structGenerator"
 	"./structs"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -42,7 +42,6 @@ var (
 	username    = os.Args[1]
 	password    = os.Args[2]
 	environment = os.Args[3]
-	genStructs  = os.Args[4]
 	db          = sqlParser.ConnectToDatabase(username, password, environment)
 )
 
@@ -59,11 +58,11 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 		if !structs.ValidStruct[tableName] {
 			http.NotFound(w, r)
 		} else {
-			rows := sqlParser.GetRows(tableName)
+			rows := sqlParser.GetRowArray(tableName)
 			w.Header().Set("Content-Type", "application/json")
 
-			structs.MapTableToJson(tableName, rows, w)
-
+			enc := json.NewEncoder(w)
+			enc.Encode(rows)
 		}
 	} else if r.Method == "POST" {
 		filename := r.PostFormValue("filename")
@@ -77,10 +76,6 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	if genStructs == "1" {
-		structGenerator.InitStructFiles()
-	}
-
 	fmt.Println("Starting server.")
 	flag.Parse()
 	http.HandleFunc("/", generateHandler)

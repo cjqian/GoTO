@@ -2,14 +2,15 @@ package main
 
 import (
 	"./sqlParser"
-	"./structGenerator"
+	"./structGen"
 	"bufio"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 )
 
-func CreateCustomView() {
+func CreateView() {
 	fmt.Println("View Name:")
 	var viewName string
 	_, err := fmt.Scanln(&viewName)
@@ -24,8 +25,14 @@ func CreateCustomView() {
 		panic(err)
 	}
 
+	viewName = strings.ToLower(viewName)
 	sqlParser.MakeView(viewName, query)
 	structGenerator.AppendToStructFiles(viewName)
+	//if strings.Contains(query, " join ") {
+	//structGenerator.JoinAppendToStructFiles(viewName)
+	//} else {
+	//structGenerator.AppendToStructFiles(viewName)
+	//}
 }
 
 func main() {
@@ -33,16 +40,11 @@ func main() {
 	sqlParser.ConnectToDatabase(os.Args[1], os.Args[2], os.Args[3])
 
 	//get command
-	fmt.Println("Create [0], Delete All [1] Views?")
-	var response int
-	_, err := fmt.Scanln(&response)
-	if err != nil {
-		panic(err)
-	}
+	response := os.Args[4]
 
-	if response == 0 {
-		CreateCustomView()
-	} else if response == 1 {
+	if response == "1" {
+		CreateView()
+	} else if response == "0" {
 		sqlParser.DeleteViews()
 		structGenerator.InitStructFiles()
 	} else {
