@@ -1,0 +1,33 @@
+#!/bin/bash
+
+echo "TEST: GET: ----------------------------------------"
+echo "TEST: ASN: "
+curl GET http://127.0.0.1:8080/table=asn | python -m json.tool
+
+echo "TEST: CACHEGROUP: "
+curl GET http://127.0.0.1:8080/table=cachegroup | python -m json.tool
+
+echo "TEST: DELIVERYSERVICE: "
+curl GET http://127.0.0.1:8080/table=deliveryservice | python -m json.tool
+
+echo "------------------------------------------------"
+
+echo "TEST: POST: ----------------------------------------"
+echo "TEST: ASN: "
+cat jsonFiles/tmpJson3
+curl -X POST --data "filename=jsonFiles/tmpJson3" http://127.0.0.1:8080/table=asn
+curl GET http://127.0.0.1:8080/table=asn | python -m json.tool
+echo "------------------------------------------------"
+
+echo "TEST: PUT: ----------------------------------------"
+echo "TEST: ASN: "
+curl -X PUT http://127.0.0.1:8080/table=asn/id=1111/new:id=1112
+curl GET http://127.0.0.1:8080/table=asn | python -m json.tool
+echo "------------------------------------------------"
+
+echo "TEST: DELETE: ----------------------------------------"
+echo "TEST: ASN: "
+curl -X DELETE http://127.0.0.1:8080/table=asn/id=1112/
+curl GET http://127.0.0.1:8080/table=asn | python -m json.tool
+echo "------------------------------------------------"
+

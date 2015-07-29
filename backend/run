@@ -1,0 +1,28 @@
+#!/bin/bash
+
+#"dbInfo" file stores creds
+source .dbInfo
+
+#if no generated structs or need to regen	
+if [ "$1" == "g" ] || [ "$2" == "g" ] || [ ! -f genStructs ] ; then
+	go build generator.go
+	./generator $USERNAME $PASSWORD $ENVIRONMENT g
+	go build server.go
+	./server $USERNAME $PASSWORD $ENVIRONMENT
+#create new view
+elif [ "$1" == "n" ] || [ "$2" == "n" ] ; then
+	go build generator.go
+	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT n
+	go build server.go
+	./server $USERNAME $PASSWORD $ENVIRONMENT
+#delete all views
+elif [ "$1" == "d" ] || [ "$2" == "d" ] ; then
+	go build generator.go
+	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT d
+	go build server.go
+	./server $USERNAME $PASSWORD $ENVIRONMENT
+#default: start server
+else
+	go build server.go	
+	./server $USERNAME $PASSWORD $ENVIRONMENT
+fi
