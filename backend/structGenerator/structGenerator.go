@@ -62,7 +62,7 @@ func InitStructs() {
 
 func AppendToStructInterface(table string) {
 	//function declaration
-	structInterface := "func EncodeStruct" + strings.Title(table) + "(rows *sqlx.Rows, w http.ResponseWriter) {\n" //make new array
+	structInterface := "func EncodeStruct" + strings.Title(table) + "(rows *sqlx.Rows) interface{} {\n" //make new array
 	structInterface += "\tsa := make([]" + strings.Title(table) + ", 0)\n"
 	//make new instance
 	structInterface += "\tt := " + strings.Title(table) + "{}\n\n"
@@ -71,8 +71,7 @@ func AppendToStructInterface(table string) {
 	structInterface += "\t\t rows.StructScan(&t)\n"
 	structInterface += "\t\t sa = append(sa, t)\n"
 	structInterface += "\t}\n\n"
-	structInterface += "\tenc := json.NewEncoder(w)\n"
-	structInterface += "\tenc.Encode(sa)\n"
+	structInterface += "\treturn sa\n"
 	structInterface += "}\n"
 
 	AddToFile("./genStructs/structInterface.go", structInterface)
@@ -86,8 +85,6 @@ func InitStructInterface() {
 	structInterface := "package genStructs\n"
 	structInterface += "import (\n"
 	structInterface += "\t\"github.com/jmoiron/sqlx\"\n"
-	structInterface += "\t\"encoding/json\"\n"
-	structInterface += "\t\"net/http\"\n"
 	structInterface += ")\n"
 
 	//makes a function for each object
@@ -95,7 +92,7 @@ func InitStructInterface() {
 	tableList = append(tableList, sqlParser.GetViewNames()...)
 	for _, table := range tableList {
 		//function declaration
-		structInterface += "func EncodeStruct" + strings.Title(table) + "(rows *sqlx.Rows, w http.ResponseWriter) {\n" //make new array
+		structInterface += "func EncodeStruct" + strings.Title(table) + "(rows *sqlx.Rows) interface{} {\n" //make new array
 		structInterface += "\tsa := make([]" + strings.Title(table) + ", 0)\n"
 		//make new instance
 		structInterface += "\tt := " + strings.Title(table) + "{}\n\n"
@@ -104,8 +101,7 @@ func InitStructInterface() {
 		structInterface += "\t\t rows.StructScan(&t)\n"
 		structInterface += "\t\t sa = append(sa, t)\n"
 		structInterface += "\t}\n\n"
-		structInterface += "\tenc := json.NewEncoder(w)\n"
-		structInterface += "\tenc.Encode(sa)\n"
+		structInterface += "\treturn sa\n"
 		structInterface += "}\n"
 	}
 
@@ -140,7 +136,7 @@ func InitStructValidMap() {
 
 func AppendToStructMap(table string) {
 	structMap := "\tif tableName == \"" + table + "\"{\n"
-	structMap += "\t\tEncodeStruct" + strings.Title(table) + "(rows, w)\n"
+	structMap += "\t\treturn EncodeStruct" + strings.Title(table) + "(rows)\n"
 	structMap += "\t}\n"
 
 	AddToMethodInFile("./genStructs/structMap.go", structMap)
@@ -151,19 +147,19 @@ func AppendToStructMap(table string) {
 func InitStructMap() {
 	//declaration, imports
 	structMap := "package genStructs\n"
-	structMap += "import (\n\t\"github.com/jmoiron/sqlx\"\n"
-	structMap += "\t\"net/http\"\n)\n"
-	structMap += "func MapTableToJson(tableName string, rows *sqlx.Rows, w http.ResponseWriter) {\n"
+	structMap += "import \"github.com/jmoiron/sqlx\"\n"
+	structMap += "func MapTableToJson(tableName string, rows *sqlx.Rows) interface{}{\n"
 
 	//each table has a case mapping name with structInterface function
 	tableList := sqlParser.GetTableNames()
 	tableList = append(tableList, sqlParser.GetViewNames()...)
 	for _, table := range tableList {
 		structMap += "\tif tableName == \"" + table + "\"{\n"
-		structMap += "\t\tEncodeStruct" + strings.Title(table) + "(rows, w)\n"
+		structMap += "\t\treturn EncodeStruct" + strings.Title(table) + "(rows)\n"
 		structMap += "\t}\n"
 	}
 
+	structMap += "\treturn \"\"\n"
 	//if invalid table, returns error
 	structMap += "}\n"
 

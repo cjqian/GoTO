@@ -1,10 +1,8 @@
 package genStructs
 import (
 	"github.com/jmoiron/sqlx"
-	"encoding/json"
-	"net/http"
 )
-func EncodeStructAsn(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructAsn(rows *sqlx.Rows) interface{} {
 	sa := make([]Asn, 0)
 	t := Asn{}
 
@@ -13,10 +11,9 @@ func EncodeStructAsn(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructCachegroup(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructCachegroup(rows *sqlx.Rows) interface{} {
 	sa := make([]Cachegroup, 0)
 	t := Cachegroup{}
 
@@ -25,10 +22,9 @@ func EncodeStructCachegroup(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructCachegroup_parameter(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructCachegroup_parameter(rows *sqlx.Rows) interface{} {
 	sa := make([]Cachegroup_parameter, 0)
 	t := Cachegroup_parameter{}
 
@@ -37,10 +33,9 @@ func EncodeStructCachegroup_parameter(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructDeliveryservice(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructDeliveryservice(rows *sqlx.Rows) interface{} {
 	sa := make([]Deliveryservice, 0)
 	t := Deliveryservice{}
 
@@ -49,10 +44,9 @@ func EncodeStructDeliveryservice(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructDeliveryservice_regex(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructDeliveryservice_regex(rows *sqlx.Rows) interface{} {
 	sa := make([]Deliveryservice_regex, 0)
 	t := Deliveryservice_regex{}
 
@@ -61,10 +55,9 @@ func EncodeStructDeliveryservice_regex(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructDeliveryservice_server(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructDeliveryservice_server(rows *sqlx.Rows) interface{} {
 	sa := make([]Deliveryservice_server, 0)
 	t := Deliveryservice_server{}
 
@@ -73,10 +66,9 @@ func EncodeStructDeliveryservice_server(rows *sqlx.Rows, w http.ResponseWriter) 
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructDeliveryservice_tmuser(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructDeliveryservice_tmuser(rows *sqlx.Rows) interface{} {
 	sa := make([]Deliveryservice_tmuser, 0)
 	t := Deliveryservice_tmuser{}
 
@@ -85,10 +77,9 @@ func EncodeStructDeliveryservice_tmuser(rows *sqlx.Rows, w http.ResponseWriter) 
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructDivision(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructDivision(rows *sqlx.Rows) interface{} {
 	sa := make([]Division, 0)
 	t := Division{}
 
@@ -97,10 +88,9 @@ func EncodeStructDivision(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructGoose_db_version(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructGoose_db_version(rows *sqlx.Rows) interface{} {
 	sa := make([]Goose_db_version, 0)
 	t := Goose_db_version{}
 
@@ -109,10 +99,9 @@ func EncodeStructGoose_db_version(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructHwinfo(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructHwinfo(rows *sqlx.Rows) interface{} {
 	sa := make([]Hwinfo, 0)
 	t := Hwinfo{}
 
@@ -121,10 +110,9 @@ func EncodeStructHwinfo(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructJob(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructJob(rows *sqlx.Rows) interface{} {
 	sa := make([]Job, 0)
 	t := Job{}
 
@@ -133,10 +121,9 @@ func EncodeStructJob(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructJob_agent(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructJob_agent(rows *sqlx.Rows) interface{} {
 	sa := make([]Job_agent, 0)
 	t := Job_agent{}
 
@@ -145,10 +132,9 @@ func EncodeStructJob_agent(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructJob_result(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructJob_result(rows *sqlx.Rows) interface{} {
 	sa := make([]Job_result, 0)
 	t := Job_result{}
 
@@ -157,10 +143,9 @@ func EncodeStructJob_result(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructJob_status(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructJob_status(rows *sqlx.Rows) interface{} {
 	sa := make([]Job_status, 0)
 	t := Job_status{}
 
@@ -169,10 +154,9 @@ func EncodeStructJob_status(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructLog(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructLog(rows *sqlx.Rows) interface{} {
 	sa := make([]Log, 0)
 	t := Log{}
 
@@ -181,10 +165,9 @@ func EncodeStructLog(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructParameter(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructParameter(rows *sqlx.Rows) interface{} {
 	sa := make([]Parameter, 0)
 	t := Parameter{}
 
@@ -193,10 +176,9 @@ func EncodeStructParameter(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructPhys_location(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructPhys_location(rows *sqlx.Rows) interface{} {
 	sa := make([]Phys_location, 0)
 	t := Phys_location{}
 
@@ -205,10 +187,9 @@ func EncodeStructPhys_location(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructProfile(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructProfile(rows *sqlx.Rows) interface{} {
 	sa := make([]Profile, 0)
 	t := Profile{}
 
@@ -217,10 +198,9 @@ func EncodeStructProfile(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructProfile_parameter(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructProfile_parameter(rows *sqlx.Rows) interface{} {
 	sa := make([]Profile_parameter, 0)
 	t := Profile_parameter{}
 
@@ -229,10 +209,9 @@ func EncodeStructProfile_parameter(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructRegex(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructRegex(rows *sqlx.Rows) interface{} {
 	sa := make([]Regex, 0)
 	t := Regex{}
 
@@ -241,10 +220,9 @@ func EncodeStructRegex(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructRegion(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructRegion(rows *sqlx.Rows) interface{} {
 	sa := make([]Region, 0)
 	t := Region{}
 
@@ -253,10 +231,9 @@ func EncodeStructRegion(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructRole(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructRole(rows *sqlx.Rows) interface{} {
 	sa := make([]Role, 0)
 	t := Role{}
 
@@ -265,10 +242,9 @@ func EncodeStructRole(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructServer(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructServer(rows *sqlx.Rows) interface{} {
 	sa := make([]Server, 0)
 	t := Server{}
 
@@ -277,10 +253,9 @@ func EncodeStructServer(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructServercheck(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructServercheck(rows *sqlx.Rows) interface{} {
 	sa := make([]Servercheck, 0)
 	t := Servercheck{}
 
@@ -289,10 +264,9 @@ func EncodeStructServercheck(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructStaticdnsentry(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructStaticdnsentry(rows *sqlx.Rows) interface{} {
 	sa := make([]Staticdnsentry, 0)
 	t := Staticdnsentry{}
 
@@ -301,10 +275,9 @@ func EncodeStructStaticdnsentry(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructStatus(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructStatus(rows *sqlx.Rows) interface{} {
 	sa := make([]Status, 0)
 	t := Status{}
 
@@ -313,10 +286,9 @@ func EncodeStructStatus(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructTm_user(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructTm_user(rows *sqlx.Rows) interface{} {
 	sa := make([]Tm_user, 0)
 	t := Tm_user{}
 
@@ -325,10 +297,9 @@ func EncodeStructTm_user(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructTo_extension(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructTo_extension(rows *sqlx.Rows) interface{} {
 	sa := make([]To_extension, 0)
 	t := To_extension{}
 
@@ -337,10 +308,9 @@ func EncodeStructTo_extension(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructType(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructType(rows *sqlx.Rows) interface{} {
 	sa := make([]Type, 0)
 	t := Type{}
 
@@ -349,10 +319,9 @@ func EncodeStructType(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructCondensedasn(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructCondensedasn(rows *sqlx.Rows) interface{} {
 	sa := make([]Condensedasn, 0)
 	t := Condensedasn{}
 
@@ -361,10 +330,9 @@ func EncodeStructCondensedasn(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructCrystal(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructCrystal(rows *sqlx.Rows) interface{} {
 	sa := make([]Crystal, 0)
 	t := Crystal{}
 
@@ -373,10 +341,9 @@ func EncodeStructCrystal(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructDeliveryservicesdenver(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructDeliveryservicesdenver(rows *sqlx.Rows) interface{} {
 	sa := make([]Deliveryservicesdenver, 0)
 	t := Deliveryservicesdenver{}
 
@@ -385,10 +352,9 @@ func EncodeStructDeliveryservicesdenver(rows *sqlx.Rows, w http.ResponseWriter) 
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }
-func EncodeStructHimark(rows *sqlx.Rows, w http.ResponseWriter) {
+func EncodeStructHimark(rows *sqlx.Rows) interface{} {
 	sa := make([]Himark, 0)
 	t := Himark{}
 
@@ -397,6 +363,5 @@ func EncodeStructHimark(rows *sqlx.Rows, w http.ResponseWriter) {
 		 sa = append(sa, t)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.Encode(sa)
+	return sa
 }

@@ -1,106 +1,104 @@
 package genStructs
-import (
-	"github.com/jmoiron/sqlx"
-	"net/http"
-)
-func MapTableToJson(tableName string, rows *sqlx.Rows, w http.ResponseWriter) {
+import "github.com/jmoiron/sqlx"
+func MapTableToJson(tableName string, rows *sqlx.Rows) interface{}{
 	if tableName == "asn"{
-		EncodeStructAsn(rows, w)
+		return EncodeStructAsn(rows)
 	}
 	if tableName == "cachegroup"{
-		EncodeStructCachegroup(rows, w)
+		return EncodeStructCachegroup(rows)
 	}
 	if tableName == "cachegroup_parameter"{
-		EncodeStructCachegroup_parameter(rows, w)
+		return EncodeStructCachegroup_parameter(rows)
 	}
 	if tableName == "deliveryservice"{
-		EncodeStructDeliveryservice(rows, w)
+		return EncodeStructDeliveryservice(rows)
 	}
 	if tableName == "deliveryservice_regex"{
-		EncodeStructDeliveryservice_regex(rows, w)
+		return EncodeStructDeliveryservice_regex(rows)
 	}
 	if tableName == "deliveryservice_server"{
-		EncodeStructDeliveryservice_server(rows, w)
+		return EncodeStructDeliveryservice_server(rows)
 	}
 	if tableName == "deliveryservice_tmuser"{
-		EncodeStructDeliveryservice_tmuser(rows, w)
+		return EncodeStructDeliveryservice_tmuser(rows)
 	}
 	if tableName == "division"{
-		EncodeStructDivision(rows, w)
+		return EncodeStructDivision(rows)
 	}
 	if tableName == "goose_db_version"{
-		EncodeStructGoose_db_version(rows, w)
+		return EncodeStructGoose_db_version(rows)
 	}
 	if tableName == "hwinfo"{
-		EncodeStructHwinfo(rows, w)
+		return EncodeStructHwinfo(rows)
 	}
 	if tableName == "job"{
-		EncodeStructJob(rows, w)
+		return EncodeStructJob(rows)
 	}
 	if tableName == "job_agent"{
-		EncodeStructJob_agent(rows, w)
+		return EncodeStructJob_agent(rows)
 	}
 	if tableName == "job_result"{
-		EncodeStructJob_result(rows, w)
+		return EncodeStructJob_result(rows)
 	}
 	if tableName == "job_status"{
-		EncodeStructJob_status(rows, w)
+		return EncodeStructJob_status(rows)
 	}
 	if tableName == "log"{
-		EncodeStructLog(rows, w)
+		return EncodeStructLog(rows)
 	}
 	if tableName == "parameter"{
-		EncodeStructParameter(rows, w)
+		return EncodeStructParameter(rows)
 	}
 	if tableName == "phys_location"{
-		EncodeStructPhys_location(rows, w)
+		return EncodeStructPhys_location(rows)
 	}
 	if tableName == "profile"{
-		EncodeStructProfile(rows, w)
+		return EncodeStructProfile(rows)
 	}
 	if tableName == "profile_parameter"{
-		EncodeStructProfile_parameter(rows, w)
+		return EncodeStructProfile_parameter(rows)
 	}
 	if tableName == "regex"{
-		EncodeStructRegex(rows, w)
+		return EncodeStructRegex(rows)
 	}
 	if tableName == "region"{
-		EncodeStructRegion(rows, w)
+		return EncodeStructRegion(rows)
 	}
 	if tableName == "role"{
-		EncodeStructRole(rows, w)
+		return EncodeStructRole(rows)
 	}
 	if tableName == "server"{
-		EncodeStructServer(rows, w)
+		return EncodeStructServer(rows)
 	}
 	if tableName == "servercheck"{
-		EncodeStructServercheck(rows, w)
+		return EncodeStructServercheck(rows)
 	}
 	if tableName == "staticdnsentry"{
-		EncodeStructStaticdnsentry(rows, w)
+		return EncodeStructStaticdnsentry(rows)
 	}
 	if tableName == "status"{
-		EncodeStructStatus(rows, w)
+		return EncodeStructStatus(rows)
 	}
 	if tableName == "tm_user"{
-		EncodeStructTm_user(rows, w)
+		return EncodeStructTm_user(rows)
 	}
 	if tableName == "to_extension"{
-		EncodeStructTo_extension(rows, w)
+		return EncodeStructTo_extension(rows)
 	}
 	if tableName == "type"{
-		EncodeStructType(rows, w)
+		return EncodeStructType(rows)
 	}
 	if tableName == "condensedasn"{
-		EncodeStructCondensedasn(rows, w)
+		return EncodeStructCondensedasn(rows)
 	}
 	if tableName == "crystal"{
-		EncodeStructCrystal(rows, w)
+		return EncodeStructCrystal(rows)
 	}
 	if tableName == "deliveryservicesdenver"{
-		EncodeStructDeliveryservicesdenver(rows, w)
+		return EncodeStructDeliveryservicesdenver(rows)
 	}
 	if tableName == "himark"{
-		EncodeStructHimark(rows, w)
+		return EncodeStructHimark(rows)
 	}
+	return ""
 }

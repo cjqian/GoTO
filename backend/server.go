@@ -24,6 +24,7 @@ package main
 import (
 	"./genStructs"
 	"./sqlParser"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -61,7 +62,10 @@ func generateHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 			rows := sqlParser.GetRows(tableName, tableParameters)
 			w.Header().Set("Content-Type", "application/json")
-			genStructs.MapTableToJson(tableName, rows, w)
+
+			enc := json.NewEncoder(w)
+			s := genStructs.MapTableToJson(tableName, rows)
+			enc.Encode(s)
 		}
 	} else if r.Method == "POST" {
 		filename := r.PostFormValue("filename")
