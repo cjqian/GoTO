@@ -2,7 +2,6 @@ package jsonParser
 
 import (
 	"./../sqlParser"
-	//"./structs"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -29,7 +28,7 @@ func check(err error) {
 }
 
 //reads file, interprets as json
-func AddJsonCols(tableName string, filename string) {
+func AddRow(tableName string, filename string) {
 	fmt.Println(filename)
 	fileStr, err := ioutil.ReadFile(filename)
 	fmt.Println(string(fileStr))

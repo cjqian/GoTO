@@ -24,6 +24,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"os"
+	//	"strconv"
 )
 
 var (
@@ -176,14 +177,16 @@ func GetRowArray(tableName string) []map[string]interface{} {
 	check(err)
 
 	rowArray := make([]map[string]interface{}, 0)
-
+	columnTypes := GetColumnTypes(tableName)
+	fmt.Println(columnTypes)
+	//fmt.Println("Types: ", mappedTypes)
 	for rows.Next() {
 		results := make(map[string]interface{}, 0)
 		err = rows.MapScan(results)
-
 		for k, v := range results {
 			if b, ok := v.([]byte); ok {
-				results[k] = string(b)
+				t := GetColumnType(k)
+				results[k] = StringToType(b, t)
 			}
 		}
 
@@ -202,82 +205,27 @@ func GetCustomRowArray(query string) []map[string]interface{} {
 	for rows.Next() {
 		results := make(map[string]interface{}, 0)
 		err = rows.MapScan(results)
-
-		for k, v := range results {
-			if b, ok := v.([]byte); ok {
-				results[k] = string(b)
-			}
-		}
 		rowArray = append(rowArray, results)
 	}
 	return rowArray
 }
-
-//returns array of column names from table in database
-func GetCustomColumnNames(query string) []string {
-	var colNames []string
-
-	colRawBytes := make([]byte, 1)
-	colInterface := make([]interface{}, 1)
-
-	colInterface[0] = &colRawBytes
-
-	rows, err := globalDB.Query(query)
+func MakeView(queryName string, query string) {
+	qStr := "create view " + queryName + " as " + query
+	_, err := globalDB.Query(qStr)
 	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(colInterface...)
-		check(err)
-
-		colNames = append(colNames, string(colRawBytes))
-	}
-
-	return colNames
 }
 
-//returns array of column names from table in database
-func GetTableColumnNames(tableName string) []string {
-	var colNames []string
-
-	colRawBytes := make([]byte, 1)
-	colInterface := make([]interface{}, 1)
-
-	colInterface[0] = &colRawBytes
-
-	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
+func DeleteView(viewName string) {
+	qStr := "drop view " + viewName
+	_, err := globalDB.Query(qStr)
 	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(colInterface...)
-		check(err)
-
-		colName := tableName + "." + string(colRawBytes)
-		colNames = append(colNames, colName)
-	}
-
-	return colNames
 }
 
-//returns array of column names from table in database
-func GetColumnNames(tableName string) []string {
-	var colNames []string
-
-	colRawBytes := make([]byte, 1)
-	colInterface := make([]interface{}, 1)
-
-	colInterface[0] = &colRawBytes
-
-	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
-	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(colInterface...)
-		check(err)
-
-		colNames = append(colNames, string(colRawBytes))
+func DeleteViews() {
+	for _, view := range GetViewNames() {
+		fmt.Println(view)
+		DeleteView(view)
 	}
-
-	return colNames
 }
 
 //returns array of column names from table in database
@@ -302,8 +250,6 @@ func GetColumnTypes(tableName string) []string {
 	return colTypes
 }
 
-//returns array of column names from table in database
-//MUST be of type table.column!!
 func GetColumnType(columnName string) string {
 	var colTypes []string
 
@@ -325,21 +271,24 @@ func GetColumnType(columnName string) string {
 	return colTypes[0]
 }
 
-func MakeView(queryName string, query string) {
-	qStr := "create view " + queryName + " as " + query
-	_, err := globalDB.Query(qStr)
-	check(err)
-}
+//returns array of column names from table in database
+func GetColumnNames(tableName string) []string {
+	var colNames []string
 
-func DeleteView(viewName string) {
-	qStr := "drop view " + viewName
-	_, err := globalDB.Query(qStr)
-	check(err)
-}
+	colRawBytes := make([]byte, 1)
+	colInterface := make([]interface{}, 1)
 
-func DeleteViews() {
-	for _, view := range GetViewNames() {
-		fmt.Println(view)
-		DeleteView(view)
+	colInterface[0] = &colRawBytes
+
+	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(colInterface...)
+		check(err)
+
+		colNames = append(colNames, string(colRawBytes))
 	}
+
+	return colNames
 }
