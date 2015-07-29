@@ -1,29 +1,12 @@
-/*
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-*/
-
-//sqlParser.go
 //interacts with database
 package sqlParser
 
 import (
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"os"
+	//	"os"
 )
 
 var (
@@ -33,40 +16,53 @@ var (
 
 func check(e error) {
 	if e != nil {
-		fmt.Printf("Exiting: %v \n", e)
-		os.Exit(1)
+		panic(e)
 	}
 }
 
-func AddTableToDatabase(newCol interface{}, tableName string) {
-	m := newCol.(map[string]interface{})
+//adds new row to db
+func AddTableToDatabase(newRow interface{}, tableName string) {
+	m := newRow.(map[string]interface{})
+
+	//"INSERT INTO tableName (a, b) values (av, bv);"
 	query := "INSERT INTO " + tableName + " ("
+	//parses through all keys and values
 	keyStr := ""
 	valueStr := ""
-
 	for k, v := range m {
 		keyStr += k + ","
 		valueStr += "'" + TypeToString(v) + "',"
 	}
 
+	//removes last comma
 	keyStr = keyStr[:len(keyStr)-1]
 	valueStr = valueStr[:len(valueStr)-1]
 
 	query += keyStr + ") VALUES ( " + valueStr + " );"
+
 	_, err := globalDB.Query(query)
-	check(err)
+	if err != nil {
+		outputError := errors.New("SP-ATTD: Invalid row for table " + tableName)
+		panic(outputError)
+	}
 }
 
-func AddTablesToDatabase(newCols []interface{}, tableName string) {
-	for _, col := range newCols {
-		AddTableToDatabase(col, tableName)
+//add array of rows to db
+func AddTablesToDatabase(newRows []interface{}, tableName string) {
+	for _, row := range newRows {
+		AddTableToDatabase(row, tableName)
 	}
+
+	fmt.Printf("SUCCESS: %d rows added to %s!\n", len(newRows), tableName)
 }
 
 //connects to and returns a pointer to the database
 func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
 	db, err := sqlx.Connect("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
-	check(err)
+	if err != nil {
+		outputError := errors.New("SP-CTD: Could not connect to DB with creds")
+		panic(outputError)
+	}
 
 	//set globalEnvironment
 	globalEnvironment = environment
@@ -77,6 +73,7 @@ func ConnectToDatabase(username string, password string, environment string) sql
 
 //deletes given parameters
 func DeleteFromTable(tableName string, parameters map[string]string) {
+	//delete from tableName where x = a and y = b
 	query := "delete from " + tableName
 
 	if len(parameters) > 0 {
@@ -85,19 +82,23 @@ func DeleteFromTable(tableName string, parameters map[string]string) {
 		for k, v := range parameters {
 			query += k + "=" + v + " and "
 		}
-
+		//removes last "and"
 		query = query[:len(query)-4]
 	}
 
 	_, err := globalDB.Query(query)
-	check(err)
+	if err != nil {
+		outputError := errors.New("SP-DFT: Invalid delete query: " + query)
+		panic(outputError)
+	}
 
-	fmt.Println(query)
+	fmt.Printf("SUCCESS: %s\n", query)
 }
 
 func UpdateTable(tableName string, parameters map[string]string, updateParameters map[string]string) {
 	query := "update " + tableName
 
+	//new changes
 	if len(updateParameters) > 0 {
 		query += " set "
 
@@ -108,6 +109,7 @@ func UpdateTable(tableName string, parameters map[string]string, updateParameter
 		query = query[:len(query)-2]
 	}
 
+	//where
 	if len(parameters) > 0 {
 		query += " where "
 
@@ -117,13 +119,14 @@ func UpdateTable(tableName string, parameters map[string]string, updateParameter
 
 		query = query[:len(query)-4]
 	}
-	//_, err := globalDB.Query(query)
-	//check(err)
+
 	_, err := globalDB.Query(query)
-	check(err)
+	if err != nil {
+		outputError := errors.New("SP-UT: Invalid update query: " + query)
+		panic(outputError)
+	}
 
-	fmt.Println(query)
-
+	fmt.Printf("SUCCESS: %s\n", query)
 }
 
 //returns array of table name strings from queried database

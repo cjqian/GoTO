@@ -1,18 +1,32 @@
 #!/bin/bash
 
 #"dbInfo" file stores creds
-source dbInfo
+source .dbInfo
 
-#if "gs" (generate structs) is called or structs folder doesn't exist
-if [ "$1" == "gs" ] || [ "$2" == "gs" ] || [ ! -d "structs" ] ; then
-	go build main.go
-	./main $USERNAME $PASSWORD $ENVIRONMENT 1
-elif [ "$1" == "cs" ] || [ "$2" == "cs" ] ; then
-	go build structCustomGenerator.go
-	./structCustomGenerator $USERNAME $PASSWORD $ENVIRONMENT
-	go build main.go
-	./main $USERNAME $PASSWORD $ENVIRONMENT 0
+#if no generated structs or need to regen	
+if [ "$1" == "g" ] || [ "$2" == "g" ] || [ ! -f genStructs ] ; then
+	if [ ! -f genStructs ]; then
+		mkdir genStructs
+	fi
+
+	go build generator.go
+	./generator $USERNAME $PASSWORD $ENVIRONMENT g
+	go build server.go
+	./server $USERNAME $PASSWORD $ENVIRONMENT
+#create new view
+elif [ "$1" == "n" ] || [ "$2" == "n" ] ; then
+	go build generator.go
+	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT n
+	go build server.go
+	./server $USERNAME $PASSWORD $ENVIRONMENT
+#delete all views
+elif [ "$1" == "d" ] || [ "$2" == "d" ] ; then
+	go build generator.go
+	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT d
+	go build server.go
+	./server $USERNAME $PASSWORD $ENVIRONMENT
+#default: start server
 else
-	go build main.go	
-	./main $USERNAME $PASSWORD $ENVIRONMENT 0
+	go build server.go	
+	./server $USERNAME $PASSWORD $ENVIRONMENT
 fi

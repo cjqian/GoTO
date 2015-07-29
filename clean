@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "" > generator
+rm generator
+
+echo "" > main
+rm main
+
+rm -rf genStructs
+
