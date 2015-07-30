@@ -4,25 +4,29 @@
 source .dbInfo
 
 #if no generated structs or need to regen	
-if [ "$1" == "g" ] || [ "$2" == "g" ] || [ ! -f genStructs ] ; then
+if [ "$1" == "g" ] || [ "$2" == "g" ]; then
+echo "1"
 	go build generator.go
 	./generator $USERNAME $PASSWORD $ENVIRONMENT g
 	go build server.go
 	./server $USERNAME $PASSWORD $ENVIRONMENT
 #create new view
 elif [ "$1" == "n" ] || [ "$2" == "n" ] ; then
+echo "2"
 	go build generator.go
-	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT n
+	./generator $USERNAME $PASSWORD $ENVIRONMENT n
 	go build server.go
 	./server $USERNAME $PASSWORD $ENVIRONMENT
 #delete all views
 elif [ "$1" == "d" ] || [ "$2" == "d" ] ; then
+echo "3"
 	go build generator.go
-	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT d
+	./generator $USERNAME $PASSWORD $ENVIRONMENT d
 	go build server.go
 	./server $USERNAME $PASSWORD $ENVIRONMENT
 #default: start server
 else
+echo "4"
 	go build server.go	
 	./server $USERNAME $PASSWORD $ENVIRONMENT
 fi
