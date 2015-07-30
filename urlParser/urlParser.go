@@ -1,17 +1,18 @@
 package urlParser
 
+//package main
+
 import (
-	"errors"
+	//	"errors"
 	//"fmt"
-	"regexp"
+	//	"regexp"
 	"strings"
 )
 
 type Request struct {
-	TableName        string
-	Id               string
-	Parameters       map[string]string
-	UpdateParameters map[string]string
+	Type       string
+	TableName  string
+	Parameters []string
 }
 
 func check(e error) {
@@ -22,41 +23,43 @@ func check(e error) {
 
 //makes a new request given a string url
 func ParseURL(url string) Request {
-	r := Request{"", "", map[string]string{}, map[string]string{}}
+	r := Request{"", "", make([]string, 0)}
 
 	url = strings.ToLower(url)
+
+	//replace symbols
+	url = strings.Replace(url, "%3c", "<", -1)
+	url = strings.Replace(url, "%3e", ">", -1)
+
 	urlSections := strings.Split(url, "/")
 
-	for _, section := range urlSections {
-		//first check if match table name
-		if matchTableName, err := regexp.MatchString("^table=", section); matchTableName && err == nil {
-			if r.TableName == "" {
-				r.TableName = section[6:]
-			} else {
-				err := errors.New("Error: multiple table name requests defined.")
-				check(err)
-			}
+	if len(urlSections) > 0 {
+		r.Type = urlSections[0]
+	}
 
-		} else if matchUpdate, err := regexp.MatchString("^new:", section); matchUpdate && err == nil {
-			ua := strings.Split(section[4:], ",")
-			for _, param := range ua {
-				pa := strings.Split(param, "=")
-				r.UpdateParameters[pa[0]] = pa[1]
+	if len(urlSections) > 1 {
+		titleParamStr := urlSections[1]
+
+		qMarkSplit := strings.Split(titleParamStr, "?")
+		r.TableName = qMarkSplit[0]
+
+		if len(qMarkSplit) > 1 {
+			paramSplit := strings.Split(qMarkSplit[1], "&")
+			for _, param := range paramSplit {
+				r.Parameters = append(r.Parameters, param)
 			}
-		} else if matchEquiv, err := regexp.MatchString("^.*=", section); matchEquiv && err == nil {
-			ea := strings.Split(section, "=")
-			r.Parameters[ea[0]] = ea[1]
 		}
 	}
+
+	if len(urlSections) > 2 && urlSections[2] != "" {
+		r.Parameters = append(r.Parameters, "id="+urlSections[2])
+	}
+
 	return r
 }
 
-/*
-func main() {
-	s := "table=asn/fields=cat,dog/fields="
-	r := ParseURL(s)
-
-	fmt.Printf("%s\n", r.TableName)
-	fmt.Printf("%s\n", r.Fields)
-}
-*/
+//func main() {
+//s := "url?param1=foo&param2=bar/3"
+//r := ParseURL(s)
+//fmt.Println(r)
+//}

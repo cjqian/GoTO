@@ -1,21 +1,7 @@
 #!/bin/bash
 
 #"dbInfo" file stores creds
-source dbInfo
+source .dbInfo
 
-#if "gs" (generate structs) is called or structs folder doesn't exist
-if [ "$1" == "cv" ] || [ "$2" == "cv" ] ; then
-	go build viewGenerator.go
-	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT 1
 	go build server.go
 	./server $USERNAME $PASSWORD $ENVIRONMENT
-elif [ "$1" == "dv" ] || [ "$2" == "dv" ] ; then
-	go build viewGenerator.go
-	./viewGenerator $USERNAME $PASSWORD $ENVIRONMENT 0
-	
-	go build server.go
-	./server $USERNAME $PASSWORD $ENVIRONMENT
-else
-	go build server.go	
-	./server $USERNAME $PASSWORD $ENVIRONMENT
-fi

@@ -22,8 +22,7 @@ under the License.
 package main
 
 import (
-	"./jsonParser"
-	"./outputFormatter"
+	//	"./outputFormatter"
 	"./sqlParser"
 	"encoding/json"
 	"flag"
@@ -42,39 +41,75 @@ var (
 	username    = os.Args[1]
 	password    = os.Args[2]
 	environment = os.Args[3]
-	db          = sqlParser.ConnectToDatabase(username, password, environment)
+	db          = sqlParser.InitializeDatabase(username, password, environment)
 )
 
+func getHandler(w http.ResponseWriter, tableName string, tableParameters []string) {
+	rows := sqlParser.GetRows(tableName, tableParameters)
+	enc := json.NewEncoder(w)
+	enc.Encode(rows)
+}
+
 //returns JSON of argument table name in database
-func generateHandler(w http.ResponseWriter, r *http.Request) {
+func viewHandler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[1:]
+	if r.URL.RawQuery != "" {
+		path += "?" + r.URL.RawQuery
+	}
+
 	request := urlParser.ParseURL(path)
 	tableName := request.TableName
 	tableParameters := request.Parameters
-	tableUpdateParameters := request.UpdateParameters
 
-	if r.Method == "GET" {
-		//returns rows in type []map[string]interface{}
-		rows := sqlParser.GetRowArray(tableName)
-		wrapper := outputFormatter.MakeWrapper(rows)
-		//		outputFormatter.CleanRowArray(rows)
-		w.Header().Set("Content-Type", "application/json")
-		enc := json.NewEncoder(w)
-		enc.Encode(wrapper)
-	} else if r.Method == "POST" {
-		filename := r.PostFormValue("filename")
-		jsonParser.AddRow(tableName, filename)
+	if r.Method == "POST" {
+		fileName := r.PostFormValue("filename")
+		sqlParser.PostViews(fileName)
+
 	} else if r.Method == "DELETE" {
-		sqlParser.DeleteFromTable(tableName, tableParameters)
-	} else if r.Method == "PUT" {
-		sqlParser.UpdateTable(tableName, tableParameters, tableUpdateParameters)
+		if tableName != "" {
+			sqlParser.DeleteView(tableName)
+		} else {
+			sqlParser.DeleteViews()
+		}
+	}
+
+	if tableName != "" && r.Method != "DELETE" {
+		getHandler(w, tableName, tableParameters)
 	}
 }
 
+//returns JSON of argument table name in database
+func apiHandler(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Path[1:]
+	if r.URL.RawQuery != "" {
+		path += "?" + r.URL.RawQuery
+	}
+
+	request := urlParser.ParseURL(path)
+	tableName := request.TableName
+	tableParameters := request.Parameters
+
+	fmt.Println(request)
+	if r.Method == "POST" {
+		filename := r.PostFormValue("filename")
+		sqlParser.AddRowsFromFile(tableName, filename)
+	} else if r.Method == "DELETE" {
+		sqlParser.DeleteFromTable(tableName, tableParameters)
+	} else if r.Method == "PUT" {
+		filename := r.PostFormValue("filename")
+		sqlParser.PutJsonRow(tableName, tableParameters, filename)
+	}
+
+	if tableName != "" {
+		getHandler(w, tableName, tableParameters)
+	}
+}
 func main() {
 	fmt.Println("Starting server.")
 	flag.Parse()
-	http.HandleFunc("/", generateHandler)
+
+	http.HandleFunc("/api/", apiHandler)
+	http.HandleFunc("/view/", viewHandler)
 
 	if *addr {
 		//runs on home

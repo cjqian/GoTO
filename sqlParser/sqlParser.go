@@ -1,46 +1,140 @@
-/*
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-*/
+//package main
 
-//sqlParser.go
-//interacts with database
 package sqlParser
 
+/**********************************************************************************
+ * DIRECTORY:
+ * 1. DB INITIALIZE
+ * 2. MAINSERVER: DELETE
+ * 3. MAINSERVER: GET
+ * 4. MAINSERVER: POST
+ * 5. MAINSERVER: PUT
+ * 6. VIEWSERVER: POST
+ * 7: VIEWSERVER: DELETE
+ *********************************************************************************/
+
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"os"
-	//	"strconv"
+	"io/ioutil"
+	"strings"
 )
 
 var (
-	globalEnvironment = ""
-	globalDB          sqlx.DB
+	globalDB sqlx.DB
+	colMap   map[string]string
 )
 
 func check(e error) {
 	if e != nil {
-		fmt.Printf("Exiting: %v \n", e)
-		os.Exit(1)
+		panic(e)
 	}
 }
 
-func AddTableToDatabase(newCol interface{}, tableName string) {
-	m := newCol.(map[string]interface{})
+/*********************************************************************************
+ * DB INITIALIZE: Connects given DB creds, creates ColMap FOR SESSION
+ ********************************************************************************/
+func InitializeDatabase(username string, password string, environment string) sqlx.DB {
+	db, err := sqlx.Connect("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
+	check(err)
+
+	globalDB = *db
+
+	//set global colMap
+	colMap = GetColMap()
+	return *db
+}
+
+//returns interface from given table (name) from queried database
+func GetColMap() map[string]string {
+	colMap := make(map[string]string, 0)
+	cols, err := globalDB.Queryx("SELECT DISTINCT COLUMN_NAME, COLUMN_TYPE FROM information_schema.columns")
+	check(err)
+
+	for cols.Next() {
+		var colName string
+		var colType string
+
+		err = cols.Scan(&colName, &colType)
+
+		colMap[colName] = strings.Split(colType, "(")[0]
+	}
+
+	return colMap
+}
+
+/*********************************************************************************
+ * MAINSERVER: DELETE FUNCTIONALITY
+ ********************************************************************************/
+//deletes given parameters
+func DeleteFromTable(tableName string, parameters []string) {
+	//delete from tableName where x = a and y = b
+	query := "delete from " + tableName
+
+	if len(parameters) > 0 {
+		query += " where "
+
+		for _, v := range parameters {
+			query += v + " and "
+		}
+		//removes last "and"
+		query = query[:len(query)-4]
+	}
+
+	_, err := globalDB.Query(query)
+	if err != nil {
+		outputError := errors.New("SP-DFT: Invalid delete query: " + query)
+		panic(outputError)
+	}
+
+	fmt.Printf("SUCCESS: %s\n", query)
+}
+
+/*********************************************************************************
+ * MAINSERVER: GET FUNCTIONALITY
+ ********************************************************************************/
+//returns interface from given table (name) from queried database
+func GetRows(tableName string, tableParams []string) []map[string]interface{} {
+
+	whereStmt := ""
+	if len(tableParams) > 0 {
+		whereStmt += " where "
+
+		for _, v := range tableParams {
+			whereStmt += v + " and "
+		}
+
+		whereStmt = whereStmt[:len(whereStmt)-4]
+	}
+	rows, err := globalDB.Queryx("SELECT * from " + tableName + whereStmt)
+	check(err)
+
+	rowArray := make([]map[string]interface{}, 0)
+
+	for rows.Next() {
+		results := make(map[string]interface{}, 0)
+		err = rows.MapScan(results)
+		for k, v := range results {
+			if b, ok := v.([]byte); ok {
+				results[k] = StringToType(b, colMap[k])
+			}
+		}
+
+		rowArray = append(rowArray, results)
+	}
+	return rowArray
+}
+
+/*********************************************************************************
+ * MAINSERVER: POST FUNCTIONALITY
+ ********************************************************************************/
+//adds new row to table
+func AddRowToTable(newRow interface{}, tableName string) {
+	m := newRow.(map[string]interface{})
+	//insert into table (colA, colB) values (valA, valB);
 	query := "INSERT INTO " + tableName + " ("
 	keyStr := ""
 	valueStr := ""
@@ -54,99 +148,104 @@ func AddTableToDatabase(newCol interface{}, tableName string) {
 	valueStr = valueStr[:len(valueStr)-1]
 
 	query += keyStr + ") VALUES ( " + valueStr + " );"
-	_, err := globalDB.Query(query)
-	check(err)
-}
-
-func AddTablesToDatabase(newCols []interface{}, tableName string) {
-	for _, col := range newCols {
-		AddTableToDatabase(col, tableName)
-	}
-}
-
-//connects to and returns a pointer to the database
-func ConnectToDatabase(username string, password string, environment string) sqlx.DB {
-	db, err := sqlx.Connect("mysql", username+":"+password+"@tcp(localhost:3306)/"+environment)
-	check(err)
-
-	//set globalEnvironment
-	globalEnvironment = environment
-	globalDB = *db
-
-	return *db
-}
-
-//deletes given parameters
-func DeleteFromTable(tableName string, parameters map[string]string) {
-	query := "delete from " + tableName
-
-	if len(parameters) > 0 {
-		query += " where "
-
-		for k, v := range parameters {
-			query += k + "=" + v + " and "
-		}
-
-		query = query[:len(query)-4]
-	}
-
-	_, err := globalDB.Query(query)
-	check(err)
-
 	fmt.Println(query)
+	_, err := globalDB.Query(query)
+	check(err)
 }
 
-func UpdateTable(tableName string, parameters map[string]string, updateParameters map[string]string) {
+func AddRowsToTable(newRows []interface{}, tableName string) {
+	for _, row := range newRows {
+		AddRowToTable(row, tableName)
+	}
+}
+
+//adds JSON from FILENAME to TABLE
+func AddRowsFromFile(tableName string, fileName string) {
+	fileStr, err := ioutil.ReadFile(fileName)
+	check(err)
+
+	var f []interface{}
+	err2 := json.Unmarshal(fileStr, &f)
+	check(err2)
+
+	AddRowsToTable(f, tableName)
+	fmt.Println("SP-ADDROWS: SUCCESS")
+}
+
+/*********************************************************************************
+ * MAINSERVER: PUT FUNCTIONALITY
+ ********************************************************************************/
+func PutJsonRow(tableName string, parameters []string, fileName string) {
+	//reads in the file
+	fileStr, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		outputError := errors.New("SP-PJR: File not found: " + fileName)
+		panic(outputError)
+	}
+
+	//unmarshals the json into an interface
+	var f interface{}
+	err2 := json.Unmarshal(fileStr, &f)
+	if err2 != nil {
+		outputError := errors.New("SP-PJR: Incorrect JSON formatting: " + fileName)
+		panic(outputError)
+	}
+
+	//adds the interface row to table in database
+	UpdateRow(f, tableName, parameters)
+}
+
+func UpdateRow(newRow interface{}, tableName string, parameters []string) {
 	query := "update " + tableName
 
+	updateParameters := newRow.(map[string]interface{})
+	//new changes
 	if len(updateParameters) > 0 {
 		query += " set "
 
 		for k, v := range updateParameters {
-			query += k + "='" + v + "', "
+			query += k + "='" + TypeToString(v) + "', "
 		}
 
 		query = query[:len(query)-2]
 	}
 
+	//where
 	if len(parameters) > 0 {
 		query += " where "
 
-		for k, v := range parameters {
-			query += k + "='" + v + "' and "
+		for _, v := range parameters {
+			query += v + " and "
 		}
 
 		query = query[:len(query)-4]
 	}
-	//_, err := globalDB.Query(query)
-	//check(err)
+
 	_, err := globalDB.Query(query)
-	check(err)
-
-	fmt.Println(query)
-
-}
-
-//returns array of table name strings from queried database
-func GetTableNames() []string {
-	var tableNames []string
-
-	tableRawBytes := make([]byte, 1)
-	tableInterface := make([]interface{}, 1)
-
-	tableInterface[0] = &tableRawBytes
-
-	rows, err := globalDB.Query("SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_TYPE='BASE TABLE' and TABLE_SCHEMA='" + globalEnvironment + "'")
-	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(tableInterface...)
-		check(err)
-
-		tableNames = append(tableNames, string(tableRawBytes))
+	if err != nil {
+		outputError := errors.New("SP-UT: Invalid update query: " + query)
+		panic(outputError)
 	}
 
-	return tableNames
+	fmt.Printf("SUCCESS: %s\n", query)
+}
+
+/*********************************************************************************
+ * VIEWSERVER: DELETE FUNCTIONALITY
+ ********************************************************************************/
+
+func DeleteView(viewName string) {
+	qStr := "drop view " + viewName
+	_, err := globalDB.Query(qStr)
+	check(err)
+}
+
+func DeleteViews() {
+	for _, view := range GetViewNames() {
+		DeleteView(view)
+	}
+
+	fmt.Printf("SUCCESS: DELETED VIEWS")
 }
 
 func GetViewNames() []string {
@@ -168,127 +267,34 @@ func GetViewNames() []string {
 	}
 
 	return tableNames
-
 }
 
-//returns interface from given table (name) from queried database
-func GetRowArray(tableName string) []map[string]interface{} {
-	rows, err := globalDB.Queryx("SELECT * from " + tableName)
+/*********************************************************************************
+ * VIEWSERVER: POST FUNCTIONALITY
+ ********************************************************************************/
+type View struct {
+	Name  string
+	Query string
+}
+
+//adds JSON from FILENAME to TABLE
+func PostViews(fileName string) {
+	fileStr, err := ioutil.ReadFile(fileName)
 	check(err)
 
-	rowArray := make([]map[string]interface{}, 0)
-	columnTypes := GetColumnTypes(tableName)
-	fmt.Println(columnTypes)
-	//fmt.Println("Types: ", mappedTypes)
-	for rows.Next() {
-		results := make(map[string]interface{}, 0)
-		err = rows.MapScan(results)
-		for k, v := range results {
-			if b, ok := v.([]byte); ok {
-				t := GetColumnType(k)
-				results[k] = StringToType(b, t)
-			}
-		}
+	var views []View
+	err2 := json.Unmarshal(fileStr, &views)
+	check(err2)
 
-		rowArray = append(rowArray, results)
+	for _, view := range views {
+		MakeView(view.Name, view.Query)
 	}
-	return rowArray
+
+	fmt.Println("SUCCESS: VIEWS MADE")
 }
 
-//returns interface from given table (name) from queried database
-func GetCustomRowArray(query string) []map[string]interface{} {
-	rows, err := globalDB.Queryx(query)
-	check(err)
-
-	rowArray := make([]map[string]interface{}, 0)
-
-	for rows.Next() {
-		results := make(map[string]interface{}, 0)
-		err = rows.MapScan(results)
-		rowArray = append(rowArray, results)
-	}
-	return rowArray
-}
-func MakeView(queryName string, query string) {
-	qStr := "create view " + queryName + " as " + query
+func MakeView(viewName string, view string) {
+	qStr := "create view " + viewName + " as " + view
 	_, err := globalDB.Query(qStr)
 	check(err)
-}
-
-func DeleteView(viewName string) {
-	qStr := "drop view " + viewName
-	_, err := globalDB.Query(qStr)
-	check(err)
-}
-
-func DeleteViews() {
-	for _, view := range GetViewNames() {
-		fmt.Println(view)
-		DeleteView(view)
-	}
-}
-
-//returns array of column names from table in database
-func GetColumnTypes(tableName string) []string {
-	var colTypes []string
-
-	colRawBytes := make([]byte, 1)
-	colInterface := make([]interface{}, 1)
-
-	colInterface[0] = &colRawBytes
-
-	rows, err := globalDB.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
-	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(colInterface...)
-		check(err)
-
-		colTypes = append(colTypes, string(colRawBytes))
-	}
-
-	return colTypes
-}
-
-func GetColumnType(columnName string) string {
-	var colTypes []string
-
-	colRawBytes := make([]byte, 1)
-	colInterface := make([]interface{}, 1)
-
-	colInterface[0] = &colRawBytes
-
-	rows, err := globalDB.Query("SELECT COLUMN_TYPE FROM information_schema.columns WHERE COLUMN_NAME='" + columnName + "'")
-	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(colInterface...)
-		check(err)
-
-		colTypes = append(colTypes, string(colRawBytes))
-	}
-
-	return colTypes[0]
-}
-
-//returns array of column names from table in database
-func GetColumnNames(tableName string) []string {
-	var colNames []string
-
-	colRawBytes := make([]byte, 1)
-	colInterface := make([]interface{}, 1)
-
-	colInterface[0] = &colRawBytes
-
-	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' and TABLE_SCHEMA='" + globalEnvironment + "'")
-	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(colInterface...)
-		check(err)
-
-		colNames = append(colNames, string(colRawBytes))
-	}
-
-	return colNames
 }

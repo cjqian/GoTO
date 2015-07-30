@@ -35,7 +35,7 @@ func CreateView() {
 
 func main() {
 	//connect to database
-	sqlParser.ConnectToDatabase(os.Args[1], os.Args[2], os.Args[3])
+	sqlParser.InitializeDatabase(os.Args[1], os.Args[2], os.Args[3])
 
 	//get command
 	response := os.Args[4]
