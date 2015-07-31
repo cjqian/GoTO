@@ -3,5 +3,5 @@
 #"dbInfo" file stores creds
 source .dbInfo
 
-	go build server.go
-	./server $USERNAME $PASSWORD $ENVIRONMENT
+#takes in username/password/database from dbInfo file
+go run server.go $USERNAME $PASSWORD $DATABASE

@@ -1,19 +1,33 @@
+/*
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+*/
+
 package urlParser
 
-//package main
+/******************************************************************
+* urlParser contains:
+* * type Request struct,  which stores request information
+  * * table/view from which information is queried
+  * * parameters (in []string) that narrows table/view query field
+* * ParseURL(urlString), which takes in a URL and parses it into a Request
+*****************************************************************/
 
 import (
-	//	"errors"
-	//"fmt"
-	//	"regexp"
 	"strings"
 )
-
-type Request struct {
-	Type       string
-	TableName  string
-	Parameters []string
-}
 
 func check(e error) {
 	if e != nil {
@@ -21,28 +35,36 @@ func check(e error) {
 	}
 }
 
+type Request struct {
+	//can be for a table or a view
+	TableName string
+
+	//ex. "cachegroup < 50"
+	//ex. "cachegroup >= 50"
+	Parameters []string
+}
+
 //makes a new request given a string url
 func ParseURL(url string) Request {
-	r := Request{"", "", make([]string, 0)}
+	r := Request{"", make([]string, 0)}
 
 	url = strings.ToLower(url)
 
-	//replace symbols
+	//replace less than/greater than symbols in url encode
 	url = strings.Replace(url, "%3c", "<", -1)
 	url = strings.Replace(url, "%3e", ">", -1)
 
 	urlSections := strings.Split(url, "/")
 
+	//title exists
 	if len(urlSections) > 0 {
-		r.Type = urlSections[0]
-	}
+		titleParamStr := urlSections[0]
 
-	if len(urlSections) > 1 {
-		titleParamStr := urlSections[1]
-
+		// splits table name and parameters by "?"
 		qMarkSplit := strings.Split(titleParamStr, "?")
 		r.TableName = qMarkSplit[0]
 
+		// if parameters exist, separate by "&"
 		if len(qMarkSplit) > 1 {
 			paramSplit := strings.Split(qMarkSplit[1], "&")
 			for _, param := range paramSplit {
@@ -51,15 +73,11 @@ func ParseURL(url string) Request {
 		}
 	}
 
-	if len(urlSections) > 2 && urlSections[2] != "" {
-		r.Parameters = append(r.Parameters, "id="+urlSections[2])
+	//second potential urlSection (after tableName & parameters) is specified id
+	//by nature of SQLParser, this is considered as a parameter
+	if len(urlSections) > 1 && urlSections[1] != "" {
+		r.Parameters = append(r.Parameters, "id="+urlSections[1])
 	}
 
 	return r
 }
-
-//func main() {
-//s := "url?param1=foo&param2=bar/3"
-//r := ParseURL(s)
-//fmt.Println(r)
-//}

@@ -15,115 +15,82 @@ specific language governing permissions and limitations
 under the License.
 */
 
-//main.go
-//takes in username, password, and database arguments
-//runs server that handles url table searches
-
 package main
 
 import (
-	//	"./outputFormatter"
 	"./outputFormatter"
 	"./sqlParser"
+	"./urlParser"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
-	//	"net/url"
-	"./urlParser"
 	"os"
 )
 
 var (
-	addr        = flag.Bool("addr", false, "find open address and print to final-port.txt")
-	username    = os.Args[1]
-	password    = os.Args[2]
-	environment = os.Args[3]
-	db          = sqlParser.InitializeDatabase(username, password, environment)
+	addr     = flag.Bool("addr", false, "find open address and print to final-port.txt")
+	username = os.Args[1]
+	password = os.Args[2]
+	database = os.Args[3]
+
+	//initializing the database connects and writes a column type map
+	//(see sqlParser for more details)
+	db = sqlParser.InitializeDatabase(username, password, database)
 )
 
-func getHandler(w http.ResponseWriter, tableName string, tableParameters []string) {
-	rows := sqlParser.GetRows(tableName, tableParameters)
-	erows := outputFormatter.MakeWrapper(rows)
-	enc := json.NewEncoder(w)
-	enc.Encode(erows)
-
-}
-
-//returns JSON of argument table name in database
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path[1:]
-	if r.URL.RawQuery != "" {
-		path += "?" + r.URL.RawQuery
-	}
-
-	request := urlParser.ParseURL(path)
-	tableName := request.TableName
-	tableParameters := request.Parameters
-
-	if r.Method == "DELETE" {
-		if tableName != "" {
-			sqlParser.DeleteView(tableName)
-		} else {
-			sqlParser.DeleteViews()
-		}
-	}
-
-	if tableName != "" && r.Method != "DELETE" {
-		getHandler(w, tableName, tableParameters)
-	}
-}
-
-//returns JSON of argument table name in database
+//handles all calls to the API
 func apiHandler(w http.ResponseWriter, r *http.Request) {
+	//url of type "/table?parameterA=valueA&parameterB=valueB/id
 	path := r.URL.Path[1:]
 	if r.URL.RawQuery != "" {
 		path += "?" + r.URL.RawQuery
 	}
 
 	request := urlParser.ParseURL(path)
+
+	//note: tableName could also refer to a view
 	tableName := request.TableName
 	tableParameters := request.Parameters
 
-	fmt.Println(request)
 	if r.Method == "POST" {
-		filename := r.PostFormValue("filename")
-
-		if tableName == "" {
-			sqlParser.PostViews(filename)
-		} else {
-			sqlParser.AddRowsFromFile(tableName, filename)
-		}
+		fileName := r.PostFormValue("filename")
+		sqlParser.Post(tableName, fileName)
 	} else if r.Method == "DELETE" {
-		sqlParser.DeleteFromTable(tableName, tableParameters)
+		sqlParser.Delete(tableName, tableParameters)
 	} else if r.Method == "PUT" {
-		filename := r.PostFormValue("filename")
-		sqlParser.PutJsonRow(tableName, tableParameters, filename)
+		fileName := r.PostFormValue("filename")
+		sqlParser.Put(tableName, tableParameters, fileName)
 	}
 
+	//GETS the request
 	if tableName != "" {
-		getHandler(w, tableName, tableParameters)
+		rows := sqlParser.Get(tableName, tableParameters)
+		resp := outputFormatter.MakeWrapper(rows)
+
+		//encoder writes the resultant "Response" struct (see outputFormatter) to writer
+		enc := json.NewEncoder(w)
+		enc.Encode(resp)
 	}
 }
+
 func main() {
 	fmt.Println("Starting server.")
 	flag.Parse()
 
-	http.HandleFunc("/api/", apiHandler)
-	http.HandleFunc("/view/", viewHandler)
+	http.HandleFunc("/", apiHandler)
 
 	if *addr {
 		//runs on home
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		err = ioutil.WriteFile("final-port.txt", []byte(l.Addr().String()), 0644)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		s := &http.Server{}
 		s.Serve(l)
