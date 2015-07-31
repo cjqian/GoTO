@@ -32,7 +32,7 @@ git clone https://github.com/cjqian/GoTO.git
   ```
   ./run
   ```
-  You should get a `Starting server.` message. If all goes well, the server should start on port 8080! You can change this in `server.go.`
+  You should get a `Starting server.` message. If all goes well, the server should start on port 8080! You can change this in `server.go`.
 
   Alternatively, if the Bash script isn't working out for you (i.e. you're using Windows or something weird like that), you can start the server with:
   ```
@@ -50,7 +50,7 @@ git clone https://github.com/cjqian/GoTO.git
   See `./run` for execution examples. Also, are your database credentials correct?
   * Is your `mysql` up and running? Type `mysql` into your terminal to verify.
   * Do you have the latest version of this code? Run `git pull` to get an update. 
-  * Also, make sure you've checked out `master` branch and not a development branch
+  * Also, make sure you've checked out `master` branch and not a development branch.
 
 ## Syntax 
 ###GET 
@@ -73,10 +73,12 @@ git clone https://github.com/cjqian/GoTO.git
   ```
   curl -X POST --data "filename=$YOURFILEHERE" http://127.0.0.1:8080/tableName
   ```
-For now, if you want to post a new row to a table, you need to have everything in a JSON file ($YOURFILEHERE)
+For now, if you want to post a new row to a table, you need to have everything in a JSON file (`$YOURFILEHERE`)
   in your GoTO directory.
 
   Eventually, information added through the front-end will be passed as JSON data. 
+
+  You can see examples of POST files in `testFiles`; specifically, `newAsn` and `newAsns`.
 
 ####Custom views
   ```
@@ -89,6 +91,8 @@ For now, if you want to post a new row to a table, you need to have everything i
   [{"name":"viewName", "query":"select foo.id, bar.name from foo join bar"}]
   ```
   You can add multiple views if you'd like. Then, you can interact with the view like a table.
+
+  You can see examples of POST files in `testFiles`; specifically, `newView` and `newViewss`.
 
 ####PUT
   Put follows the same syntax as POST (but with PUT). On the SQL end, "UPDATES." Can be done with views, too.
@@ -111,14 +115,16 @@ For now, if you want to post a new row to a table, you need to have everything i
   ```
 
 * If `foo` is a table, all the rows are deleted from the table. You cannot drop the table, just like you cannot drop the bass. (Ooh, sick burn.)
-  * If `foo` is a view, it is dropped.
+* If `foo` is a view, it is dropped.
 
   This was an arbitrary decision on my part. Let me know if you have more elegant solutions.
 
 ##Packages
+###Local
   * sqlParser processes all interactions with the database. It contains `sqlParser.go`, which contains most of the CRUD methods, and `sqlTypeMap`, which has functions mapping values of type interface{} to string and vice-versa.
   * urlParser parses the url into a Request.
   * outputFormatter wraps the query into an encodable struct.
 
   There are more details in the comments of each of these packages.
-
+###Other
+  * `jmoiron/sqlx` has been super useful. Thanks!
