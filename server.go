@@ -23,6 +23,7 @@ package main
 
 import (
 	//	"./outputFormatter"
+	"./outputFormatter"
 	"./sqlParser"
 	"encoding/json"
 	"flag"
@@ -46,8 +47,10 @@ var (
 
 func getHandler(w http.ResponseWriter, tableName string, tableParameters []string) {
 	rows := sqlParser.GetRows(tableName, tableParameters)
+	erows := outputFormatter.MakeWrapper(rows)
 	enc := json.NewEncoder(w)
-	enc.Encode(rows)
+	enc.Encode(erows)
+
 }
 
 //returns JSON of argument table name in database
@@ -61,11 +64,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	tableName := request.TableName
 	tableParameters := request.Parameters
 
-	if r.Method == "POST" {
-		fileName := r.PostFormValue("filename")
-		sqlParser.PostViews(fileName)
-
-	} else if r.Method == "DELETE" {
+	if r.Method == "DELETE" {
 		if tableName != "" {
 			sqlParser.DeleteView(tableName)
 		} else {
@@ -92,7 +91,12 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(request)
 	if r.Method == "POST" {
 		filename := r.PostFormValue("filename")
-		sqlParser.AddRowsFromFile(tableName, filename)
+
+		if tableName == "" {
+			sqlParser.PostViews(filename)
+		} else {
+			sqlParser.AddRowsFromFile(tableName, filename)
+		}
 	} else if r.Method == "DELETE" {
 		sqlParser.DeleteFromTable(tableName, tableParameters)
 	} else if r.Method == "PUT" {
