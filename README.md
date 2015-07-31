@@ -94,10 +94,10 @@ For now, if you want to post a new row to a table, you need to have everything i
 
   You can see examples of POST files in `testFiles`; specifically, `newView` and `newViewss`.
 
-####PUT
+###PUT
   Put follows the same syntax as POST (but with PUT). On the SQL end, "UPDATES." Can be done with views, too.
 
-####DELETE
+###DELETE
 
   In this example, all rows from database `foo` with `swag < 100` are deleted. 
   ```
