@@ -67,9 +67,9 @@ package sqlParser
 
 import (
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"io/ioutil"
 	"strings"
 )
 
@@ -145,6 +145,51 @@ func IsTable(serverTableName string) int {
 	}
 
 	return -1
+}
+
+//returns array of table name strings from queried database
+func GetTableNames() []string {
+	var tableNames []string
+
+	tableRawBytes := make([]byte, 1)
+	tableInterface := make([]interface{}, 1)
+
+	tableInterface[0] = &tableRawBytes
+
+	rows, err := globalDB.Query("SELECT TABLE_NAME FROM information_schema.tables where table_type='base table' or table_type='view'")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(tableInterface...)
+		check(err)
+
+		tableNames = append(tableNames, string(tableRawBytes))
+	}
+
+	return tableNames
+}
+
+//returns array of column names from table in database
+func GetColumnNames(tableName string) []string {
+	fmt.Println(tableName)
+	var colNames []string
+
+	colRawBytes := make([]byte, 1)
+	colInterface := make([]interface{}, 1)
+
+	colInterface[0] = &colRawBytes
+
+	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' ORDER BY column_name asc")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(colInterface...)
+		check(err)
+
+		colNames = append(colNames, string(colRawBytes))
+	}
+	fmt.Println(colNames)
+	return colNames
 }
 
 /*********************************************************************************
@@ -237,11 +282,12 @@ func Get(tableName string, tableParams []string) []map[string]interface{} {
 /*********************************************************************************
  * POST FUNCTIONALITY
  ********************************************************************************/
-func Post(tableName string, fileName string) {
+func Post(tableName string, jsonByte []byte) string {
 	if IsTable(tableName) == 1 {
-		PostRows(tableName, fileName)
+		PostRows(tableName, jsonByte)
+		return tableName
 	} else {
-		PostViews(fileName)
+		return PostViews(jsonByte)
 	}
 }
 
@@ -274,12 +320,9 @@ func AddRows(newRows []interface{}, tableName string) {
 }
 
 //adds JSON from FILENAME to TABLE
-func PostRows(tableName string, fileName string) {
-	fileStr, err := ioutil.ReadFile(fileName)
-	check(err)
-
+func PostRows(tableName string, jsonByte []byte) {
 	var f []interface{}
-	err2 := json.Unmarshal(fileStr, &f)
+	err2 := json.Unmarshal(jsonByte, &f)
 	check(err2)
 
 	AddRows(f, tableName)
@@ -291,18 +334,26 @@ type View struct {
 	Query string
 }
 
+/*
 //adds JSON from FILENAME to TABLE
-func PostViews(fileName string) {
-	fileStr, err := ioutil.ReadFile(fileName)
-	check(err)
-
+func PostViews(jsonByte []byte) {
 	var views []View
-	err2 := json.Unmarshal(fileStr, &views)
+	err2 := json.Unmarshal(jsonByte, &views)
 	check(err2)
 
 	for _, view := range views {
 		MakeView(view.Name, view.Query)
 	}
+}
+*/
+//adds JSON from FILENAME to TABLE
+func PostViews(jsonByte []byte) string {
+	var view View
+	err2 := json.Unmarshal(jsonByte, &view)
+	check(err2)
+
+	MakeView(view.Name, view.Query)
+	return view.Name
 }
 
 func MakeView(viewName string, view string) {
@@ -314,16 +365,11 @@ func MakeView(viewName string, view string) {
 /*********************************************************************************
  * PUT FUNCTIONALITY
  ********************************************************************************/
-func Put(tableName string, parameters []string, fileName string) {
-	//reads in the file
-	fileStr, err := ioutil.ReadFile(fileName)
-	panic(err)
-
+func Put(tableName string, parameters []string, jsonByte []byte) {
 	//unmarshals the json into an interface
 	var f interface{}
-	err2 := json.Unmarshal(fileStr, &f)
-	panic(err2)
-
+	err2 := json.Unmarshal(jsonByte, &f)
+	check(err2)
 	//adds the interface row to table in database
 	UpdateRow(f, tableName, parameters)
 }
@@ -356,4 +402,6 @@ func UpdateRow(newRow interface{}, tableName string, parameters []string) {
 
 	_, err := globalDB.Query(query)
 	check(err)
+
+	fmt.Println(query)
 }

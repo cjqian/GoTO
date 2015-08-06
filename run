@@ -4,4 +4,4 @@
 source .dbInfo
 
 #takes in username/password/database from dbInfo file
-go run server.go $USERNAME $PASSWORD $DATABASE
+go run api.go $USERNAME $PASSWORD $DATABASE

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <script src="js/angular.js"></script>
+  <script src="js/jquery.js"></script>
+  <script src="js/main.js"></script>
+  <body ng-app="app" ng-controller="InitCtrl">
+
+	<!--dropdown gets-->
+	<form>
+	  <select ng-change="get(table); showAddRow = true" ng-model="table">
+		<option value={{table}} ng-repeat="table in tables">{{table}}</option>
+	  </select>
+	</form>
+
+	<!--TODO: ADD VIEW-->
+	<form ng-show="showAddView">
+		Name:<input type="text" ng-model="newView.Name" value="Name">
+		Query:<input type="text" ng-model="newView.Query" value="Query">
+		<button ng-click="postView(newView)">Submit</button>
+	{{newView}}
+	</form>
+	<button ng-show="!showAddView" ng-click="showAddView = ! showAddView">Add View</button>
+	<button ng-show="showAddView" ng-click="showAddView = ! showAddView">Cancel Add View</button>
+	<!--TODO: ADD INSTANCE-->
+
+	<!--table-->
+	<div>
+	  <form>
+
+	
+	<button ng-show="showAddRow" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Add Row</button>
+	<button ng-show="showAddRowCols" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Cancel Add Row</button>
+	<!-- ADD ROW PART -->
+	<form>
+	<table ng-show="showAddRowCols"><tr>
+		<td ng-repeat="column in columns">{{column}}:<br/><input type="text" ng-model=newRow[column]>{{newRow}}
+		</td>
+		<td>{{newRow}}</td>
+		<td><button ng-click="post(table, row); showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Submit</button></td></tr></table>
+	</form>
+	<!-- EDIT PART -->
+	<table>
+	  <tr><td ng-repeat="column in columns">{{column}}</td></tr>
+	  <tr ng-repeat="row in rows">
+		<!-- SHOW/EDIT-->
+		<td ng-show="!showEdit" ng-repeat="value in row">{{value}}</td>
+	    <td ng-show="showEdit" ng-repeat="(key, value) in row"><input type="text" ng-model=row[key]></td>
+		<!--EDIT/SAVE-->
+		<td><button ng-show="!showEdit" ng-click="showEdit = ! showEdit">EDIT</button></td>	
+		<td><button ng-show="showEdit" ng-click="showEdit = ! showEdit; put(table, row)">SAVE</button></td>	
+		<td><button  ng-click="delete(table, row)">X</button></td>
+	  </tr>
+	</table>
+	  </form>
+	</div>
+  </body>
+</html>

@@ -1,96 +1,106 @@
-/*
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-*/
+// Copyright 2010 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 package main
 
 import (
-	"./outputFormatter"
-	"./sqlParser"
-	"./urlParser"
-	"encoding/json"
 	"flag"
-	"fmt"
+	"html/template"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
-	"os"
+	"regexp"
 )
 
 var (
-	addr     = flag.Bool("addr", false, "find open address and print to final-port.txt")
-	username = os.Args[1]
-	password = os.Args[2]
-	database = os.Args[3]
-
-	//initializing the database connects and writes a column type map
-	//(see sqlParser for more details)
-	db = sqlParser.InitializeDatabase(username, password, database)
+	addr = flag.Bool("addr", false, "find open address and print to final-port.txt")
 )
 
-//handles all calls to the API
-func apiHandler(w http.ResponseWriter, r *http.Request) {
-	//url of type "/table?parameterA=valueA&parameterB=valueB/id
-	path := r.URL.Path[1:]
-	if r.URL.RawQuery != "" {
-		path += "?" + r.URL.RawQuery
+type Page struct {
+	Title string
+	Body  []byte
+}
+
+func (p *Page) save() error {
+	filename := p.Title + ".txt"
+	return ioutil.WriteFile(filename, p.Body, 0600)
+}
+
+func loadPage(title string) (*Page, error) {
+	filename := title + ".txt"
+	body, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
 	}
+	return &Page{Title: title, Body: body}, nil
+}
 
-	request := urlParser.ParseURL(path)
-
-	//note: tableName could also refer to a view
-	tableName := request.TableName
-	tableParameters := request.Parameters
-
-	if r.Method == "POST" {
-		fileName := r.PostFormValue("filename")
-		sqlParser.Post(tableName, fileName)
-	} else if r.Method == "DELETE" {
-		sqlParser.Delete(tableName, tableParameters)
-	} else if r.Method == "PUT" {
-		fileName := r.PostFormValue("filename")
-		sqlParser.Put(tableName, tableParameters, fileName)
+func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
+	p, err := loadPage(title)
+	if err != nil {
+		http.Redirect(w, r, "/edit/"+title, http.StatusFound)
+		return
 	}
+	renderTemplate(w, "view", p)
+}
 
-	//GETS the request
-	if tableName != "" {
-		rows := sqlParser.Get(tableName, tableParameters)
-		resp := outputFormatter.MakeWrapper(rows)
+func editHandler(w http.ResponseWriter, r *http.Request, title string) {
+	p, err := loadPage(title)
+	if err != nil {
+		p = &Page{Title: title}
+	}
+	renderTemplate(w, "edit", p)
+}
 
-		//encoder writes the resultant "Response" struct (see outputFormatter) to writer
-		enc := json.NewEncoder(w)
-		enc.Encode(resp)
+func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
+	body := r.FormValue("body")
+	p := &Page{Title: title, Body: []byte(body)}
+	err := p.save()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/view/"+title, http.StatusFound)
+}
+
+var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+
+func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+	err := templates.ExecuteTemplate(w, tmpl+".html", p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+
+func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		m := validPath.FindStringSubmatch(r.URL.Path)
+		if m == nil {
+			http.NotFound(w, r)
+			return
+		}
+		fn(w, r, m[2])
 	}
 }
 
 func main() {
-	fmt.Println("Starting server.")
 	flag.Parse()
-
-	http.HandleFunc("/", apiHandler)
+	http.HandleFunc("/view/", makeHandler(viewHandler))
+	http.HandleFunc("/edit/", makeHandler(editHandler))
+	http.HandleFunc("/save/", makeHandler(saveHandler))
 
 	if *addr {
-		//runs on home
 		l, err := net.Listen("tcp", "127.0.0.1:0")
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		err = ioutil.WriteFile("final-port.txt", []byte(l.Addr().String()), 0644)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 		s := &http.Server{}
 		s.Serve(l)
