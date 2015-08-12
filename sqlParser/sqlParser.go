@@ -64,6 +64,7 @@ package sqlParser
 
 import (
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"strings"
@@ -72,6 +73,7 @@ import (
 var (
 	globalDB sqlx.DB
 	colMap   map[string]string
+	tableMap map[string]map[string]bool
 )
 
 func check(e error) {
@@ -90,8 +92,47 @@ func InitializeDatabase(username string, password string, environment string) sq
 	globalDB = *db
 
 	//set global colMap
+	tableMap = GetTableMap()
 	colMap = GetColMap()
 	return *db
+}
+
+func GetTableMap() map[string]map[string]bool {
+	var tableNames []string
+	var tableMap = make(map[string]map[string]bool)
+
+	tableRawBytes := make([]byte, 1)
+	tableInterface := make([]interface{}, 1)
+
+	tableInterface[0] = &tableRawBytes
+
+	rows, err := globalDB.Query("SELECT TABLE_NAME FROM information_schema.tables where table_type='base table' or table_type='view'")
+	check(err)
+
+	for rows.Next() {
+		err := rows.Scan(tableInterface...)
+		check(err)
+
+		tableNames = append(tableNames, string(tableRawBytes))
+	}
+
+	for _, table := range tableNames {
+		rows, err = globalDB.Query("SELECT column_name from information_schema.columns where table_name='" + table + "'")
+		check(err)
+
+		colMap := make(map[string]bool)
+
+		for rows.Next() {
+			err = rows.Scan(tableInterface...)
+			check(err)
+
+			colMap[string(tableRawBytes)] = true
+		}
+
+		tableMap[table] = colMap
+	}
+	fmt.Println(tableMap)
+	return tableMap
 }
 
 //returns a map of each column name in table to its appropriate GoLang tpye (name string)
@@ -109,6 +150,8 @@ func GetColMap() map[string]string {
 		//split because SQL type returns are sometimes ex. int(11)
 		colMap[colName] = strings.Split(colType, "(")[0]
 	}
+
+	//new change
 
 	return colMap
 }
@@ -236,7 +279,7 @@ func RunDeleteQuery(serverTableName string, parameters []string) error {
  * GET FUNCTIONALITY
  ********************************************************************************/
 //returns interface from given table OR view from queried database
-func Get(tableName string, tableParams []string) ([]map[string]interface{}, error) {
+func GetOld(tableName string, tableParams []string) ([]map[string]interface{}, error) {
 	//if where exists, append
 	whereStmt := ""
 	if len(tableParams) > 0 {
@@ -279,6 +322,89 @@ func Get(tableName string, tableParams []string) ([]map[string]interface{}, erro
 	}
 
 	return rowArray, nil
+}
+func Get(tableName string) ([]map[string]interface{}, error) {
+	regStr := ""
+	joinStr := ""
+	onStr := ""
+
+	cols := GetColumnNames(tableName)
+	for _, col := range cols {
+		if col == "parent_cachegroup_id" {
+			joinStr += "cachegroup2.name as parent_cachegroup_id,"
+			onStr += " join cachegroup as cachegroup2 on cachegroup.parent_cachegroup_id = cachegroup2.id "
+		} else if col == "tm_user_id" {
+			joinStr += "tm_user.username as tm_user_id,"
+			onStr += " join tm_user on " + tableName + ".tm_user_id = tm_user.id "
+		} else if col == "serverid" {
+			joinStr += "server.host_name as serverid,"
+			onStr += " join server on " + tableName + ".serverid = server.id "
+		} else if tableMap[col]["host_name"] && col != tableName {
+			joinStr += col + ".host_name as " + col + ","
+			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id"
+		} else if tableMap[col]["xml_id"] && col != tableName {
+			joinStr += col + ".xml_id as " + col + ","
+			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id"
+		} else if tableMap[col]["pattern"] && col != tableName {
+			joinStr += col + ".pattern as " + col + ","
+
+			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id "
+		} else if tableMap[col]["pattern"] && col != tableName {
+			joinStr += col + ".pattern as " + col + ","
+
+			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id "
+		} else if tableMap[col]["name"] && col != tableName {
+			joinStr += col + ".name as " + col + ","
+
+			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id "
+		} else {
+			regStr += tableName + "." + col + ","
+		}
+	}
+
+	regStr = regStr[:len(regStr)-1]
+
+	if joinStr != "" {
+		joinStr = ", " + joinStr[:len(joinStr)-1]
+	}
+
+	queryStr := "select " + regStr + joinStr + " from " + tableName + " "
+
+	queryStr += onStr
+
+	fmt.Println(queryStr)
+	//do the query
+	rows, err := globalDB.Queryx(queryStr)
+	if err != nil {
+		return nil, err
+	}
+
+	//map into an array of type map[colName]value
+	rowArray := make([]map[string]interface{}, 0)
+
+	for rows.Next() {
+		results := make(map[string]interface{}, 0)
+		err = rows.MapScan(results)
+		if err != nil {
+			return nil, err
+		}
+
+		for k, v := range results {
+			//converts the byte array to its correct type
+			if b, ok := v.([]byte); ok {
+				results[k] = string(b)
+				//results[k], err = StringToType(b, "idk")
+				//if err != nil {
+				//return nil, err
+				//}
+			}
+		}
+
+		rowArray = append(rowArray, results)
+	}
+
+	return rowArray, nil
+
 }
 
 /*********************************************************************************

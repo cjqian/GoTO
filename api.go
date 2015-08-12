@@ -106,7 +106,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	var columns []string
 	//GETS the request
 	if tableName != "" {
-		rows, err = sqlParser.Get(tableName, tableParameters)
+		rows, err = sqlParser.Get(tableName)
 		columns = sqlParser.GetColumnNames(tableName)
 		if err != nil {
 			errString = err.Error()

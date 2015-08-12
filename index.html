@@ -46,8 +46,7 @@
 		</ul>
 		<!-- ADD VIEW -->
 		<ul class="nav navbar-nav navbar-right">
-		  <li>
-			<button class="btn btn-default" ng-show="!showAddView" ng-click="showAddView = ! showAddView">Add View</button>
+		<button class="btn btn-default" ng-show="!showAddView" ng-click="showAddView = ! showAddView">Add View</button>
 		  </li>
 		  <li>
 			<!--ADD VIEW FORM -->
@@ -81,7 +80,6 @@
 		<button ng-show="selections.length>0" ng-click="delete(table, selections);">Delete Row</button>
 
 		<br/><br/>
-
 		<!-- SHOW ADD ROW BUTTONS -->
 		<button ng-show="tableSelected" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Add Row</button>
 		<button ng-show="showAddRowCols" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Cancel</i></button>
