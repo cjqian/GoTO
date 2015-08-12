@@ -1,97 +1,144 @@
-angular.module('app', [])
+angular.module('app', ['ngReactGrid'])
 
-.controller('InitCtrl', function($scope, $http) {
-    $http.get('http://127.0.0.1:8080/request/').then(function(resp) {
-        $scope.tables = resp.data;
-        // For JSON responses, resp.data contains the result
-    }, function(err) {
-        console.error('ERR', err);
-        // err.status will contain the status code
-    })
+.controller('InitCtrl', function($scope, $http, $log, ngReactGridCheckbox) {
+    //initialization
+    $scope.grid = {
+        data: [],
+        columnDefs: []
+    }
+    $scope.selections = [];
+    getTableList();
+
+    var checkboxGrid = new ngReactGridCheckbox($scope.selections, {
+        batchToggle: true
+    });
+    //get list of tables
+    function getTableList() {
+        $http.get('http://127.0.0.1:8080/request/').then(function(resp) {
+            $scope.tables = resp.data;
+        }, function(err) {
+            console.error('ERR', err);
+        })
+    }
+
+    function setTable(data) {
+        if (data.error != "") {
+            alert(data.error);
+        }
+
+        checkboxGrid.setVisibleCheckboxState(false);
+        $scope.editEnabled = false;
+
+        //set grid
+        $scope.grid = {
+            data: data.response,
+            columnDefs: data.columns.concat(checkboxGrid),
+			horizontalScroll: true
+        }
+        $scope.isTable = data.isTable;
+
+        //set columns for add row, edit row, etc
+        var columns = [];
+        for (var i = 0; i < data.columns.length; i++) {
+            columns.push(data.columns[i].field);
+        }
+
+        $scope.columns = columns;
+
+        //$scope.clearCheckboxes();
+    }
+
+    $scope.clearCheckboxes = function() {
+        checkboxGrid.setVisibleCheckboxState(false);
+    }
 
     //GET
     $scope.get = function(table) {
-        var tableName = angular.copy(table);
-        console.log(tableName);
-
-        $http.get('http://127.0.0.1:8080/request/' + tableName).then(function(resp) {
-            console.log(resp.data);
-            $scope.columns = resp.data;
-            // For JSON responses, resp.data contains the result
-        }, function(err) {
-            console.error('ERR', err);
-            // err.status will contain the status code
-        })
-
-        $http.get('http://127.0.0.1:8080/api/' + tableName).then(function(resp) {
-            $scope.rows = resp.data.response;
+        $http.get('http://127.0.0.1:8080/api/' + table).then(function(resp) {
+            setTable(resp.data);
         }, function(err) {
             console.error('ERR', err);
             // err.status will contain the status code
         })
     }
 
-    //DELETE
-    $scope.delete = function(table, row) {
-        $http.get('http://127.0.0.1:8080/request/' + table).then(function(resp) {
-            console.log(resp.data);
-            $scope.columns = resp.data;
-            // For JSON responses, resp.data contains the result
-        }, function(err) {
-            console.error('ERR', err);
-            // err.status will contain the status code
-        })
+    //GET
+    $scope.update = function(table, parameters) {
+        var tableName = angular.copy(table);
 
-        $http.delete('http://127.0.0.1:8080/api/' + table + "/" + row.id).then(function(resp) {
-            $scope.rows = resp.data.response;
+        if (typeof parameters !== 'undefined') {
+            $http.get('http://127.0.0.1:8080/api/' + tableName + "?" + parameters).then(function(resp) {
+                setTable(resp.data);
+            }, function(err) {
+                console.error('ERR', err);
+            })
+        } else {
+            $scope.get(table);
+        }
+    }
+
+    //DELETE
+    $scope.delete = function(table, rows) {
+        for (var i = 0; i < rows.length; i++) {
+            $http.delete('http://127.0.0.1:8080/api/' + table + "/" + rows[i].id).then(function(resp) {
+                setTable(resp.data);
+            }, function(err) {
+                console.error('ERR', err);
+            })
+        }
+    }
+
+    //DELETE
+    $scope.deleteView = function(table) {
+        $http.delete('http://127.0.0.1:8080/api/' + table).then(function(resp) {
+            if (resp.data.error != "") {
+                alert(resp.data.error);
+            }
+
+            location.reload();
             //make table
         }, function(err) {
             console.error('ERR', err);
             // err.status will contain the status code
         })
+
+        getTableList();
     }
+
 
     //POST QUERY
     $scope.postView = function(newView) {
-		//post it
-        $http.post('http://127.0.0.1:8080/api/', newView).then(function(resp) {
-            $scope.rows = resp.data.response;
-        }, function(err) {
-            console.error('ERR', err);
-            // err.status will contain the status code
-        })
+        var viewArray = new Array(newView);
 
-		//get columns
-        $http.get('http://127.0.0.1:8080/request/' + newView.Name).then(function(resp) {
-            console.log(newView.Name);
-            console.log("COLUMNS: " + resp.data);
-            $scope.columns = resp.data;
-            // For JSON responses, resp.data contains the result
+        $http.post('http://127.0.0.1:8080/api/', viewArray).then(function(resp) {
+            if (resp.data.error != "") {
+                alert(resp.data.error);
+            }
+            location.reload();
         }, function(err) {
             console.error('ERR', err);
             // err.status will contain the status code
         })
     }
 
+    $scope.post = function(table, row) {
+        var rowArray = new Array(row);
+
+        $http.post('http://127.0.0.1:8080/api/' + table, rowArray).then(function(resp) {
+            setTable(resp.data);
+        }, function(err) {
+            console.error('ERR', err);
+        })
+    }
+
+    //PUT
     $scope.put = function(table, row) {
-		//post it
-        $http.put('http://127.0.0.1:8080/api/' + table + "/" + row.id, row).then(function(resp) {
-            $scope.rows = resp.data.response;
+        var rowArray = new Array(row);
+        $http.put('http://127.0.0.1:8080/api/' + table + "/" + row.id, rowArray).then(function(resp) {
+            setTable(resp.data);
         }, function(err) {
             console.error('ERR', err);
-            // err.status will contain the status code
         })
-
-		//get columns
-        $http.get('http://127.0.0.1:8080/request/' + newView.Name).then(function(resp) {
-            console.log(newView.Name);
-            console.log("COLUMNS: " + resp.data);
-            $scope.columns = resp.data;
-            // For JSON responses, resp.data contains the result
-        }, function(err) {
-            console.error('ERR', err);
-            // err.status will contain the status code
-        })
+        console.log("hello");
     }
-
 })

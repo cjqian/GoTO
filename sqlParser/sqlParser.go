@@ -1,19 +1,16 @@
-/*
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-*/
+// Copyright 2015 Comcast Cable Communications Management, LLC
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+// http://www.apache.org/licenses/LICENSE-2.0
+
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package sqlParser
 
@@ -67,7 +64,6 @@ package sqlParser
 
 import (
 	"encoding/json"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"strings"
@@ -121,7 +117,7 @@ func GetColMap() map[string]string {
  * HELPER FUNCTIONS
  ********************************************************************************/
 //if is table, returns 1. else (for example, is view), returns 0.
-func IsTable(serverTableName string) int {
+func IsTable(serverTableName string) bool {
 	//check if there is view. else, assume is table
 	query := "select exists(select * from information_schema.tables where table_name='" + serverTableName + "' and table_name not in (select table_name from information_schema.views))"
 	rows, err := globalDB.Query(query)
@@ -138,13 +134,13 @@ func IsTable(serverTableName string) int {
 		check(err)
 		//if exists as view, delete from view
 		if string(rawBytes) == "1" {
-			return 1
+			return true
 		} else {
-			return 0
+			return false
 		}
 	}
 
-	return -1
+	return false
 }
 
 //returns array of table name strings from queried database
@@ -171,7 +167,6 @@ func GetTableNames() []string {
 
 //returns array of column names from table in database
 func GetColumnNames(tableName string) []string {
-	fmt.Println(tableName)
 	var colNames []string
 
 	colRawBytes := make([]byte, 1)
@@ -188,39 +183,38 @@ func GetColumnNames(tableName string) []string {
 
 		colNames = append(colNames, string(colRawBytes))
 	}
-	fmt.Println(colNames)
 	return colNames
 }
 
 /*********************************************************************************
  * DELETE FUNCTIONALITY
  ********************************************************************************/
-func Delete(serverTableName string, parameters []string) {
-	if IsTable(serverTableName) == 0 {
-		DeleteFromView(serverTableName, parameters)
+func Delete(serverTableName string, parameters []string) (bool, error) {
+	if !IsTable(serverTableName) {
+		return DeleteFromView(serverTableName, parameters)
 	} else {
-		DeleteFromTable(serverTableName, parameters)
+		return false, DeleteFromTable(serverTableName, parameters)
 	}
 }
 
 //deletes from a table
-func DeleteFromTable(tableName string, parameters []string) {
-	RunDeleteQuery(tableName, parameters)
+func DeleteFromTable(tableName string, parameters []string) error {
+	return RunDeleteQuery(tableName, parameters)
 }
 
 //deletes from a view
-func DeleteFromView(viewName string, parameters []string) {
+func DeleteFromView(viewName string, parameters []string) (bool, error) {
 	if len(parameters) == 0 {
 		qStr := "drop view " + viewName
 		_, err := globalDB.Query(qStr)
-		check(err)
+		return true, err
 	} else {
-		RunDeleteQuery(viewName, parameters)
+		return false, RunDeleteQuery(viewName, parameters)
 	}
 }
 
 //runs query of format "delete from tableName where parameterA=valueA and..."
-func RunDeleteQuery(serverTableName string, parameters []string) {
+func RunDeleteQuery(serverTableName string, parameters []string) error {
 	//delete from tableName where x = a and y = b
 	query := "delete from " + serverTableName
 
@@ -235,14 +229,14 @@ func RunDeleteQuery(serverTableName string, parameters []string) {
 	}
 
 	_, err := globalDB.Query(query)
-	check(err)
+	return err
 }
 
 /*********************************************************************************
  * GET FUNCTIONALITY
  ********************************************************************************/
 //returns interface from given table OR view from queried database
-func Get(tableName string, tableParams []string) []map[string]interface{} {
+func Get(tableName string, tableParams []string) ([]map[string]interface{}, error) {
 	//if where exists, append
 	whereStmt := ""
 	if len(tableParams) > 0 {
@@ -257,7 +251,9 @@ func Get(tableName string, tableParams []string) []map[string]interface{} {
 
 	//do the query
 	rows, err := globalDB.Queryx("SELECT * from " + tableName + whereStmt)
-	check(err)
+	if err != nil {
+		return nil, err
+	}
 
 	//map into an array of type map[colName]value
 	rowArray := make([]map[string]interface{}, 0)
@@ -265,34 +261,40 @@ func Get(tableName string, tableParams []string) []map[string]interface{} {
 	for rows.Next() {
 		results := make(map[string]interface{}, 0)
 		err = rows.MapScan(results)
+		if err != nil {
+			return nil, err
+		}
 
 		for k, v := range results {
 			//converts the byte array to its correct type
 			if b, ok := v.([]byte); ok {
-				results[k] = StringToType(b, colMap[k])
+				results[k], err = StringToType(b, colMap[k])
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
 		rowArray = append(rowArray, results)
 	}
 
-	return rowArray
+	return rowArray, nil
 }
 
 /*********************************************************************************
  * POST FUNCTIONALITY
  ********************************************************************************/
-func Post(tableName string, jsonByte []byte) string {
-	if IsTable(tableName) == 1 {
-		PostRows(tableName, jsonByte)
-		return tableName
+func Post(tableName string, jsonByte []byte) (string, error) {
+	if IsTable(tableName) {
+		err := PostRows(tableName, jsonByte)
+		return tableName, err
 	} else {
 		return PostViews(jsonByte)
 	}
 }
 
 //adds new row to table
-func AddRow(newRow interface{}, tableName string) {
+func AddRow(newRow interface{}, tableName string) error {
 	m := newRow.(map[string]interface{})
 	//insert into table (colA, colB) values (valA, valB);
 	query := "INSERT INTO " + tableName + " ("
@@ -301,31 +303,50 @@ func AddRow(newRow interface{}, tableName string) {
 
 	for k, v := range m {
 		keyStr += k + ","
-		valueStr += "'" + TypeToString(v) + "',"
+		typeStr, err := TypeToString(v)
+		if err != nil {
+			return err
+		}
+
+		valueStr += "'" + typeStr + "',"
 	}
 
 	keyStr = keyStr[:len(keyStr)-1]
 	valueStr = valueStr[:len(valueStr)-1]
 
 	query += keyStr + ") VALUES ( " + valueStr + " );"
-
 	_, err := globalDB.Query(query)
-	check(err)
+
+	return err
 }
 
-func AddRows(newRows []interface{}, tableName string) {
+func AddRows(newRows []interface{}, tableName string) error {
 	for _, row := range newRows {
-		AddRow(row, tableName)
+		err := AddRow(row, tableName)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 //adds JSON from FILENAME to TABLE
-func PostRows(tableName string, jsonByte []byte) {
+//CURRENTLY ONLY ONE ROW
+func PostRows(tableName string, jsonByte []byte) error {
 	var f []interface{}
-	err2 := json.Unmarshal(jsonByte, &f)
-	check(err2)
 
-	AddRows(f, tableName)
+	err := json.Unmarshal(jsonByte, &f)
+	if err != nil {
+		return err
+	}
+
+	err2 := AddRows(f, tableName)
+	if err2 != nil {
+		return err
+	}
+
+	return nil
 }
 
 //view details are marshalled into this View struct
@@ -334,47 +355,59 @@ type View struct {
 	Query string
 }
 
-/*
 //adds JSON from FILENAME to TABLE
-func PostViews(jsonByte []byte) {
+func PostViews(jsonByte []byte) (string, error) {
 	var views []View
-	err2 := json.Unmarshal(jsonByte, &views)
-	check(err2)
 
-	for _, view := range views {
-		MakeView(view.Name, view.Query)
+	err := json.Unmarshal(jsonByte, &views)
+	if err != nil {
+		return "", err
 	}
-}
-*/
-//adds JSON from FILENAME to TABLE
-func PostViews(jsonByte []byte) string {
-	var view View
-	err2 := json.Unmarshal(jsonByte, &view)
-	check(err2)
 
-	MakeView(view.Name, view.Query)
-	return view.Name
+	var viewName string
+	for _, view := range views {
+		viewName = view.Name
+		err = MakeView(view.Name, view.Query)
+		if err != nil {
+			return viewName, err
+		}
+	}
+
+	return viewName, nil
 }
 
-func MakeView(viewName string, view string) {
+func MakeView(viewName string, view string) error {
 	qStr := "create view " + viewName + " as " + view
 	_, err := globalDB.Query(qStr)
-	check(err)
+	return err
 }
 
 /*********************************************************************************
  * PUT FUNCTIONALITY
  ********************************************************************************/
-func Put(tableName string, parameters []string, jsonByte []byte) {
+func Put(tableName string, parameters []string, jsonByte []byte) error {
 	//unmarshals the json into an interface
-	var f interface{}
-	err2 := json.Unmarshal(jsonByte, &f)
-	check(err2)
+	var f []interface{}
+	err := json.Unmarshal(jsonByte, &f)
+	if err != nil {
+		return err
+	}
 	//adds the interface row to table in database
-	UpdateRow(f, tableName, parameters)
+	return UpdateRows(f, tableName, parameters)
 }
 
-func UpdateRow(newRow interface{}, tableName string, parameters []string) {
+func UpdateRows(newRows []interface{}, tableName string, parameters []string) error {
+	for _, row := range newRows {
+		err := UpdateRow(row, tableName, parameters)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func UpdateRow(newRow interface{}, tableName string, parameters []string) error {
 	query := "update " + tableName
 
 	updateParameters := newRow.(map[string]interface{})
@@ -383,7 +416,11 @@ func UpdateRow(newRow interface{}, tableName string, parameters []string) {
 		query += " set "
 
 		for k, v := range updateParameters {
-			query += k + "='" + TypeToString(v) + "', "
+			typeStr, err := TypeToString(v)
+			if err != nil {
+				return err
+			}
+			query += k + "='" + typeStr + "', "
 		}
 
 		query = query[:len(query)-2]
@@ -401,7 +438,5 @@ func UpdateRow(newRow interface{}, tableName string, parameters []string) {
 	}
 
 	_, err := globalDB.Query(query)
-	check(err)
-
-	fmt.Println(query)
+	return err
 }

@@ -1,57 +1,107 @@
 <!DOCTYPE html>
 <html lang="en-US">
-  <script src="js/angular.js"></script>
-  <script src="js/jquery.js"></script>
-  <script src="js/main.js"></script>
+  <head>
+	<!--<script src= "http://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>-->
+	<script src="js/angular.js"></script>
+	<!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>-->
+	<script src="js/jquery.js"></script>
+	<!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>-->
+	<script src="js/bootstrap.js"></script>
+	<!--<script src="https://fb.me/react-0.13.3.js"></script>-->
+	<script src="js/react.js"></script>
+	<!--<script src="https://raw.githubusercontent.com/josebalius/ngReactGrid/master/build/js/ngReactGrid.min.js"></script>-->
+	<script src="js/ngReact.js"></script>
+	<!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">-->
+	<link rel="stylesheet" href="css/bootstrap.css">
+	<!--<link rel="stylesheet"  src="https://raw.githubusercontent.com/josebalius/ngReactGrid/master/build/css/ngReactGrid.css"></script>-->
+	<link rel="stylesheet" href="css/ngReactGrid.css">
+
+	<script src="js/main.js"></script>
+  </head>
+
+
   <body ng-app="app" ng-controller="InitCtrl">
+	<!-- HEADER -->
+	<nav class="navbar navbar-default">
+	  <div class="container-fluid">
+		<ul class="nav navbar-nav">
+		  <!--DROPDOWN TABLES -->
+		  <li>
+			<form class="navbar-form pull-left">
+			  <select class="btn btn-default dropdown-toggle" ng-change="get(table); tableSelected= true"  ng-model="table">
+				<option value={{table}}  ng-repeat="table in tables">{{table}}</option>
+			  </select>
+			  <!-- ADVANCED OPTIONS-->
+			</form>
+		  </li>
+		  <!-- ADVANCED QUERIES -->
+		  <li ng-show="tableSelected">
 
-	<!--dropdown gets-->
-	<form>
-	  <select ng-change="get(table); showAddRow = true" ng-model="table">
-		<option value={{table}} ng-repeat="table in tables">{{table}}</option>
-	  </select>
-	</form>
+			<div class="input-append">
+			  <span data-toggle="tooltip" title="Separate specs with '&'.">Advanced:</span>
+			  <input type="text" ng-model="parameters"></input>
+			  <button ng-click="update(table, parameters)" class="btn btn-default">Update</button>
+			</div>
+		  </li>
+		</ul>
+		<!-- ADD VIEW -->
+		<ul class="nav navbar-nav navbar-right">
+		  <li>
+			<button class="btn btn-default" ng-show="!showAddView" ng-click="showAddView = ! showAddView">Add View</button>
+		  </li>
+		  <li>
+			<!--ADD VIEW FORM -->
+			<form ng-show="showAddView">
+			  Name:
+			  <input type="text" ng-model="newView.Name" value="Name">Query:
+			  <input type="text" ng-model="newView.Query" value="Query">
 
-	<!--TODO: ADD VIEW-->
-	<form ng-show="showAddView">
-		Name:<input type="text" ng-model="newView.Name" value="Name">
-		Query:<input type="text" ng-model="newView.Query" value="Query">
-		<button ng-click="postView(newView)">Submit</button>
-	{{newView}}
-	</form>
-	<button ng-show="!showAddView" ng-click="showAddView = ! showAddView">Add View</button>
-	<button ng-show="showAddView" ng-click="showAddView = ! showAddView">Cancel Add View</button>
-	<!--TODO: ADD INSTANCE-->
+			  <button class="btn btn-default" ng-show="showAddView" ng-click="showAddView = ! showAddView">Cancel</button>
+			  <button class="btn btn-default" ng-click="postView(newView)">Submit</button>
+			</form>
+		  </li>
+		</ul>
+	  </div>
+	</nav>
 
-	<!--table-->
 	<div>
 	  <form>
+		<!-- EDIT -->
+		<button ng-show="selections.length>0 && !editEnabled" ng-click="editEnabled = true">Edit Row</button>
+		<button ng-show="editEnabled" ng-click="editEnabled = false; clearCheckboxes()">Cancel Edit</button>	
+		<table ng-show="editEnabled" class="table-striped table-hover table-bordered table-condensed">
+		  <tr ng-repeat="row in selections">
+			<td ng-repeat="(key, value) in row" ng-show="key != 'id' && key != 'last_updated'">
+			  {{key}} : <input type="text" ng-model=row[key]></td>
+			<td><button ng-click="put(table, row); editEnabled = false">Save</button></td> 
+		  </tr>
+		</table>
 
-	
-	<button ng-show="showAddRow" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Add Row</button>
-	<button ng-show="showAddRowCols" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Cancel Add Row</button>
-	<!-- ADD ROW PART -->
-	<form>
-	<table ng-show="showAddRowCols"><tr>
-		<td ng-repeat="column in columns">{{column}}:<br/><input type="text" ng-model=newRow[column]>{{newRow}}
-		</td>
-		<td>{{newRow}}</td>
-		<td><button ng-click="post(table, row); showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Submit</button></td></tr></table>
-	</form>
-	<!-- EDIT PART -->
-	<table>
-	  <tr><td ng-repeat="column in columns">{{column}}</td></tr>
-	  <tr ng-repeat="row in rows">
-		<!-- SHOW/EDIT-->
-		<td ng-show="!showEdit" ng-repeat="value in row">{{value}}</td>
-	    <td ng-show="showEdit" ng-repeat="(key, value) in row"><input type="text" ng-model=row[key]></td>
-		<!--EDIT/SAVE-->
-		<td><button ng-show="!showEdit" ng-click="showEdit = ! showEdit">EDIT</button></td>	
-		<td><button ng-show="showEdit" ng-click="showEdit = ! showEdit; put(table, row)">SAVE</button></td>	
-		<td><button  ng-click="delete(table, row)">X</button></td>
-	  </tr>
-	</table>
+		<!-- DELETE -->
+		<button ng-show="selections.length>0" ng-click="delete(table, selections);">Delete Row</button>
+
+		<br/><br/>
+
+		<!-- SHOW ADD ROW BUTTONS -->
+		<button ng-show="tableSelected" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Add Row</button>
+		<button ng-show="showAddRowCols" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Cancel</i></button>
+
+		<!-- ADD ROW PART -->
+		<table class="table-striped table-hover table-bordered table-condensed" ng-show="showAddRowCols" ng-init="newRow={}">
+		  <tr><td class="span2"  ng-repeat="column in columns | filter: '!id' | filter: '!last_updated'">{{column}}</td></tr>
+		  <tr><td ng-repeat="column in columns | filter: '!id' | filter: '!last_updated'"><input type="text" ng-model=newRow[column]></td>
+
+			<td>
+			  <button ng-click="post(table, newRow); showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Submit</button>
+			</td>
+		  </tr>
+		</table>
+
+		<!-- DELETE VIEW -->
+		<button ng-show="tableSelected && !isTable" ng-click="deleteView(table)">Delete View</button>
 	  </form>
+	  <!-- TABLE -->
+	  <div ng-show="tableSelected"><ng-react-grid grid="grid"></ng-react-grid></div>
 	</div>
   </body>
 </html>

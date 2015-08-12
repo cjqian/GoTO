@@ -1,19 +1,16 @@
-/*
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
-*/
+// Copyright 2015 Comcast Cable Communications Management, LLC
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+// http://www.apache.org/licenses/LICENSE-2.0
+
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package outputFormatter
 
@@ -25,16 +22,35 @@ outputFormatter contains:
 * MakeWrapper(r interface{}), which wraps r into a struct to encode
 	*****************************************************************/
 
-type Wrapper struct {
-	Resp    interface{} `json:"response"`
-	Version float64     `json:"version"`
+type ApiWrapper struct {
+	Resp    interface{}     `json:"response"`
+	Cols    []ColumnWrapper `json:"columns"`
+	Error   string          `json:"error"`
+	IsTable bool            `json:"isTable"`
+	Version float64         `json:"version"`
 }
 
 //wraps the given interface r into a returned Wrapper
 //prepped for encoding to stream
-func MakeWrapper(r interface{}) Wrapper {
+func MakeApiWrapper(r interface{}, c []string, err string, isTable bool) ApiWrapper {
 	//version is hard coded to "1.1"
 	//all of this is variable
-	w := Wrapper{r, 1.1}
+	w := ApiWrapper{r, MakeColumnWrapper(c), err, isTable, 1.1}
 	return w
+}
+
+type ColumnWrapper struct {
+	Field        string `json:"field"`
+	DisplayName  string `json:"displayName"`
+	ColumnFilter bool   `json:"columnFilter"`
+}
+
+func MakeColumnWrapper(columns []string) []ColumnWrapper {
+	cw := make([]ColumnWrapper, 0)
+	for _, column := range columns {
+		w := ColumnWrapper{column, column, true}
+		cw = append(cw, w)
+	}
+
+	return cw
 }
