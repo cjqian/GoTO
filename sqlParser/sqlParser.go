@@ -14,66 +14,18 @@
 
 package sqlParser
 
-/**********************************************************************************
- * DIRECTORY:
- * 1. DB INITIALIZE
- 	a. InitializeDatabase(username string, password string, environment string) sqlx.DB{}
-	   Initializes the database and builds a column type map for reference in get query type conversions.
-	b. GetColMap() map[string]string{}
-	   Map of each column name in table to its appropriate GoLang type.
- * 2. HELPER FUNCTIONS
- 	a. IsTable(serverTableName string) int{}
-	   If is a table in the DB, returns 1. Else, returns 0. (Useful for differentiating between
-	   views and tables.)
- * 3. DELETE
- 	a. Delete(serverTableName string, parameters []string){}
-	   Handles delete request by differentiating between view/table.
-	b. DeleteFromTable(tableName string, parameters []string)
-	   Deletes rows from tableName given parameters.
-	   Note that this deletes rows, does not drop tables.
-	c. DeleteFromView(viewName string, parameters []string){}
-	   Deletes rows from viewName given parameters.
-	   Note that this deletes rows but ALSO COULD DROP TABLES.
-	d. RunDeleteQuery(serverTableName string, parameters []string){}
-	   Constructs and runs general delete query.
- * 4. GET
- 	a. Get(tableName string, tableParams []string) []map[string]interface(){}
-	   Constructs and runs general query, returning results in an array of maps
-	   (each map represents a row, with column name key and actual value in value.
- * 5. POST
-    a. Post(tableName string, fileName string){}
-	   Handles post request by differentiating between view/table.
-	b. AddRow(newRow itnerface{}, tableName string){}
-	   Adds a new row to the table by constructing and querying an insert statement.
-	c. AddRows(newRows []interface{}, tableName string){}
-	   Adds multiple rows to table.
-	d. PostRows(tableName string, fileName string){}
-	   Parses the JSON-represented rows from given file and adds them to table.
-	e. type View struct{}
-	   Views are added via POSTs of the view name and the query.
-	f. func PostViews(fileName string){}
-	   Parses the JSON-represented view and adds the new view to the table.
-	g. func MakeView(viewName string, view string){}
-	   Constructs and queries the statement needed to add a new view to the database.
- * 6. PUT
- 	a. Put(tableName string, parameters []string, fileName string){}
-	   Parses the JSON-represented rows in the given file and UPDATES the rows specified.
-	b. UpdateRow(newRow itnerface{}, tableName string, parameters []string){}
-	   Constructs and queries the statement needed to update rows.
- *********************************************************************************/
-
 import (
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
 
 var (
 	globalDB      sqlx.DB
-	colMap        map[string]string
+	colTypeMap    map[string]string
 	foreignKeyMap map[string]ForeignKey
-	tableMap      map[string]map[string]bool
+	tableMap      map[string][]string
 )
 
 func check(e error) {
@@ -91,10 +43,11 @@ func InitializeDatabase(username string, password string, environment string) sq
 
 	globalDB = *db
 
-	//set global colMap
+	//set global colTypeMap
 	tableMap = GetTableMap()
-	colMap = GetColMap()
+	colTypeMap = GetColTypeMap()
 	foreignKeyMap = GetForeignKeyMap()
+
 	return *db
 }
 
@@ -152,23 +105,20 @@ func GetTableNames() []string {
 
 //returns array of column names from table in database
 func GetColumnNames(tableName string) []string {
-	var colNames []string
+	return tableMap[tableName]
+}
 
-	colRawBytes := make([]byte, 1)
-	colInterface := make([]interface{}, 1)
+//returns array of column names from table in database
+func GetColumnAlias(tableName string) []string {
+	tableCols := GetColumnNames(tableName)
 
-	colInterface[0] = &colRawBytes
-
-	rows, err := globalDB.Query("SELECT COLUMN_NAME FROM information_schema.columns WHERE TABLE_NAME='" + tableName + "' ORDER BY column_name asc")
-	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(colInterface...)
-		check(err)
-
-		colNames = append(colNames, string(colRawBytes))
+	for idx, col := range tableCols {
+		if val, ok := foreignKeyMap[col]; ok {
+			tableCols[idx] = val.Alias
+		}
 	}
-	return colNames
+
+	return tableCols
 }
 
 /*********************************************************************************
@@ -253,7 +203,7 @@ func GetOld(tableName string, tableParams []string) ([]map[string]interface{}, e
 		for k, v := range results {
 			//converts the byte array to its correct type
 			if b, ok := v.([]byte); ok {
-				results[k], err = StringToType(b, colMap[k])
+				results[k], err = StringToType(b, colTypeMap[k])
 				if err != nil {
 					return nil, err
 				}
@@ -273,11 +223,12 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 
 	cols := GetColumnNames(tableName)
 	for _, col := range cols {
+		//this one is special because it's calling the same table
 		if col == "parent_cachegroup_id" {
 			joinStr += "cachegroup2.name as parent_cachegroup_id,"
 			onStr += " join cachegroup as cachegroup2 on cachegroup.parent_cachegroup_id = cachegroup2.id "
 		} else if val, ok := foreignKeyMap[col]; ok && col != tableName {
-			joinStr += val.Table + "." + val.Column + " as " + col + ","
+			joinStr += val.Table + "." + val.Column + " as " + val.Alias + ","
 			onStr += " join " + val.Table + " on " + tableName + "." + col + " = " + val.Table + ".id "
 		} else {
 			regStr += tableName + "." + col + ","
@@ -294,7 +245,6 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 
 	queryStr += onStr
 
-	fmt.Println(queryStr)
 	//do the query
 	rows, err := globalDB.Queryx(queryStr)
 	if err != nil {
@@ -314,11 +264,15 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 		for k, v := range results {
 			//converts the byte array to its correct type
 			if b, ok := v.([]byte); ok {
-				results[k] = string(b)
-				//results[k], err = StringToType(b, "idk")
-				//if err != nil {
-				//return nil, err
-				//}
+				//if foreign key type conversion
+				if val, ok := foreignKeyMap[k]; ok {
+					results[k], err = StringToType(b, colTypeMap[val.Column])
+				} else {
+					results[k], err = StringToType(b, colTypeMap[k])
+				}
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -326,7 +280,6 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 	}
 
 	return rowArray, nil
-
 }
 
 /*********************************************************************************
@@ -427,6 +380,7 @@ func PostViews(jsonByte []byte) (string, error) {
 func MakeView(viewName string, view string) error {
 	qStr := "create view " + viewName + " as " + view
 	_, err := globalDB.Query(qStr)
+	tableMap = GetTableMap()
 	return err
 }
 

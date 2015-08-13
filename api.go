@@ -25,7 +25,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strings"
 )
 
 var (
@@ -41,14 +40,7 @@ var (
 
 func requestHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	path := strings.Split(r.URL.Path[1:], "/")
-
-	var resp interface{}
-	if len(path) > 1 && path[1] != "" {
-		resp = outputFormatter.MakeColumnWrapper(sqlParser.GetColumnNames(path[1]))
-	} else {
-		resp = sqlParser.GetTableNames()
-	}
+	resp := sqlParser.GetTableNames()
 	enc := json.NewEncoder(w)
 	enc.Encode(resp)
 }
@@ -107,7 +99,7 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	//GETS the request
 	if tableName != "" {
 		rows, err = sqlParser.Get(tableName)
-		columns = sqlParser.GetColumnNames(tableName)
+		columns = sqlParser.GetColumnAlias(tableName)
 		if err != nil {
 			errString = err.Error()
 		}

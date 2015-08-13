@@ -69,7 +69,7 @@ func GetForeignKeyMap() map[string]ForeignKey {
 }
 
 //returns a map of each column name in table to its appropriate GoLang tpye (name string)
-func GetColMap() map[string]string {
+func GetColTypeMap() map[string]string {
 	colMap := make(map[string]string, 0)
 
 	cols, err := globalDB.Queryx("SELECT DISTINCT COLUMN_NAME, COLUMN_TYPE FROM information_schema.columns")
@@ -87,9 +87,9 @@ func GetColMap() map[string]string {
 	return colMap
 }
 
-func GetTableMap() map[string]map[string]bool {
+func GetTableMap() map[string][]string {
 	var tableNames []string
-	var tableMap = make(map[string]map[string]bool)
+	var tableMap = make(map[string][]string)
 
 	tableRawBytes := make([]byte, 1)
 	tableInterface := make([]interface{}, 1)
@@ -107,16 +107,16 @@ func GetTableMap() map[string]map[string]bool {
 	}
 
 	for _, table := range tableNames {
-		rows, err = globalDB.Query("SELECT column_name from information_schema.columns where table_name='" + table + "'")
+		rows, err = globalDB.Query("SELECT column_name from information_schema.columns where table_name='" + table + "' ORDER BY column_name asc")
 		check(err)
 
-		colMap := make(map[string]bool)
+		colMap := make([]string, 0)
 
 		for rows.Next() {
 			err = rows.Scan(tableInterface...)
 			check(err)
 
-			colMap[string(tableRawBytes)] = true
+			colMap = append(colMap, string(tableRawBytes))
 		}
 
 		tableMap[table] = colMap
