@@ -67,13 +67,13 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"strings"
 )
 
 var (
-	globalDB sqlx.DB
-	colMap   map[string]string
-	tableMap map[string]map[string]bool
+	globalDB      sqlx.DB
+	colMap        map[string]string
+	foreignKeyMap map[string]ForeignKey
+	tableMap      map[string]map[string]bool
 )
 
 func check(e error) {
@@ -94,66 +94,8 @@ func InitializeDatabase(username string, password string, environment string) sq
 	//set global colMap
 	tableMap = GetTableMap()
 	colMap = GetColMap()
+	foreignKeyMap = GetForeignKeyMap()
 	return *db
-}
-
-func GetTableMap() map[string]map[string]bool {
-	var tableNames []string
-	var tableMap = make(map[string]map[string]bool)
-
-	tableRawBytes := make([]byte, 1)
-	tableInterface := make([]interface{}, 1)
-
-	tableInterface[0] = &tableRawBytes
-
-	rows, err := globalDB.Query("SELECT TABLE_NAME FROM information_schema.tables where table_type='base table' or table_type='view'")
-	check(err)
-
-	for rows.Next() {
-		err := rows.Scan(tableInterface...)
-		check(err)
-
-		tableNames = append(tableNames, string(tableRawBytes))
-	}
-
-	for _, table := range tableNames {
-		rows, err = globalDB.Query("SELECT column_name from information_schema.columns where table_name='" + table + "'")
-		check(err)
-
-		colMap := make(map[string]bool)
-
-		for rows.Next() {
-			err = rows.Scan(tableInterface...)
-			check(err)
-
-			colMap[string(tableRawBytes)] = true
-		}
-
-		tableMap[table] = colMap
-	}
-	fmt.Println(tableMap)
-	return tableMap
-}
-
-//returns a map of each column name in table to its appropriate GoLang tpye (name string)
-func GetColMap() map[string]string {
-	colMap := make(map[string]string, 0)
-
-	cols, err := globalDB.Queryx("SELECT DISTINCT COLUMN_NAME, COLUMN_TYPE FROM information_schema.columns")
-	check(err)
-
-	for cols.Next() {
-		var colName string
-		var colType string
-
-		err = cols.Scan(&colName, &colType)
-		//split because SQL type returns are sometimes ex. int(11)
-		colMap[colName] = strings.Split(colType, "(")[0]
-	}
-
-	//new change
-
-	return colMap
 }
 
 /*********************************************************************************
@@ -323,6 +265,7 @@ func GetOld(tableName string, tableParams []string) ([]map[string]interface{}, e
 
 	return rowArray, nil
 }
+
 func Get(tableName string) ([]map[string]interface{}, error) {
 	regStr := ""
 	joinStr := ""
@@ -333,30 +276,9 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 		if col == "parent_cachegroup_id" {
 			joinStr += "cachegroup2.name as parent_cachegroup_id,"
 			onStr += " join cachegroup as cachegroup2 on cachegroup.parent_cachegroup_id = cachegroup2.id "
-		} else if col == "tm_user_id" {
-			joinStr += "tm_user.username as tm_user_id,"
-			onStr += " join tm_user on " + tableName + ".tm_user_id = tm_user.id "
-		} else if col == "serverid" {
-			joinStr += "server.host_name as serverid,"
-			onStr += " join server on " + tableName + ".serverid = server.id "
-		} else if tableMap[col]["host_name"] && col != tableName {
-			joinStr += col + ".host_name as " + col + ","
-			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id"
-		} else if tableMap[col]["xml_id"] && col != tableName {
-			joinStr += col + ".xml_id as " + col + ","
-			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id"
-		} else if tableMap[col]["pattern"] && col != tableName {
-			joinStr += col + ".pattern as " + col + ","
-
-			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id "
-		} else if tableMap[col]["pattern"] && col != tableName {
-			joinStr += col + ".pattern as " + col + ","
-
-			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id "
-		} else if tableMap[col]["name"] && col != tableName {
-			joinStr += col + ".name as " + col + ","
-
-			onStr += " join " + col + " on " + tableName + "." + col + "=" + col + ".id "
+		} else if val, ok := foreignKeyMap[col]; ok && col != tableName {
+			joinStr += val.Table + "." + val.Column + " as " + col + ","
+			onStr += " join " + val.Table + " on " + tableName + "." + col + " = " + val.Table + ".id "
 		} else {
 			regStr += tableName + "." + col + ","
 		}
