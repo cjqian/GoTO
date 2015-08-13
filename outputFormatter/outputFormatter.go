@@ -32,10 +32,10 @@ type ApiWrapper struct {
 
 //wraps the given interface r into a returned Wrapper
 //prepped for encoding to stream
-func MakeApiWrapper(r interface{}, c []string, err string, isTable bool) ApiWrapper {
+func MakeApiWrapper(r interface{}, c []string, ca []string, err string, isTable bool) ApiWrapper {
 	//version is hard coded to "1.1"
 	//all of this is variable
-	w := ApiWrapper{r, MakeColumnWrapper(c), err, isTable, 1.1}
+	w := ApiWrapper{r, MakeColumnWrapper(c, ca), err, isTable, 1.1}
 	return w
 }
 
@@ -45,10 +45,10 @@ type ColumnWrapper struct {
 	ColumnFilter bool   `json:"columnFilter"`
 }
 
-func MakeColumnWrapper(columns []string) []ColumnWrapper {
+func MakeColumnWrapper(columns []string, columnAlias []string) []ColumnWrapper {
 	cw := make([]ColumnWrapper, 0)
-	for _, column := range columns {
-		w := ColumnWrapper{column, column, true}
+	for idx, column := range columns {
+		w := ColumnWrapper{column, columnAlias[idx], true}
 		cw = append(cw, w)
 	}
 

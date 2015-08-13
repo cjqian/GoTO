@@ -16,7 +16,7 @@ package sqlParser
 
 import (
 	"encoding/json"
-	//"fmt"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
@@ -105,19 +105,32 @@ func GetTableNames() []string {
 
 //returns array of column names from table in database
 func GetColumnNames(tableName string) []string {
-	return tableMap[tableName]
+	colNames := make([]string, 0)
+	colNames = append(colNames, tableMap[tableName]...)
+
+	return colNames
 }
 
 //returns array of column names from table in database
 func GetColumnAlias(tableName string) []string {
 	tableCols := GetColumnNames(tableName)
+	/*
+		newTableCols := make([]string, 0)
+
+		for _, col := range tableCols {
+			if val, ok := foreignKeyMap[col]; ok {
+				newTableCols = append(newTableCols, val.Alias)
+			} else {
+				newTableCols = append(newTableCols, col)
+			}
+		}
+	*/
 
 	for idx, col := range tableCols {
 		if val, ok := foreignKeyMap[col]; ok {
 			tableCols[idx] = val.Alias
 		}
 	}
-
 	return tableCols
 }
 
@@ -244,7 +257,7 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 	queryStr := "select " + regStr + joinStr + " from " + tableName + " "
 
 	queryStr += onStr
-
+	fmt.Println(queryStr)
 	//do the query
 	rows, err := globalDB.Queryx(queryStr)
 	if err != nil {
@@ -268,7 +281,11 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 				if val, ok := foreignKeyMap[k]; ok {
 					results[k], err = StringToType(b, colTypeMap[val.Column])
 				} else {
-					results[k], err = StringToType(b, colTypeMap[k])
+					if k == "parent_cachegroup_id" {
+						results[k] = string(b)
+					} else {
+						results[k], err = StringToType(b, colTypeMap[k])
+					}
 				}
 				if err != nil {
 					return nil, err
