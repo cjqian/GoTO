@@ -95,19 +95,21 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var rows []map[string]interface{}
-	var columnAlias []string
+	var columns []string
+	var columnAliases []string
+	var columnMap map[string]map[string]interface{}
 	//GETS the request
 	if tableName != "" {
 		rows, err = sqlParser.Get(tableName)
-		columnAlias = sqlParser.GetColumnAlias(tableName)
+		columns = sqlParser.GetColumnNames(tableName)
+		columnAliases, columnMap = sqlParser.GetForeignKeyColumns(tableName)
 		if err != nil {
 			errString = err.Error()
 		}
 	} else {
 		rows = nil
 	}
-
-	resp := outputFormatter.MakeApiWrapper(rows, columnAlias, columnAlias, errString, isTable)
+	resp := outputFormatter.MakeApiWrapper(rows, columns, columnAliases, columnMap, errString, isTable)
 	//encoder writes the resultant "Response" struct (see outputFormatter) to writer
 	enc := json.NewEncoder(w)
 	enc.Encode(resp)

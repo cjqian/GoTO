@@ -62,7 +62,7 @@
 		</ul>
 	  </div>
 	</nav>
-
+{{selections}}
 	<div>
 	  <form>
 		<!-- EDIT -->
@@ -81,13 +81,17 @@
 
 		<br/><br/>
 		<!-- SHOW ADD ROW BUTTONS -->
-		<button ng-show="tableSelected" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Add Row</button>
-		<button ng-show="showAddRowCols" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Cancel</i></button>
-
+		<button ng-show="tableSelected" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow; newRow={}">Add Row</button>
+		<button ng-show="showAddRowCols" ng-click="showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow; newRow={}">Cancel</i></button>
+		{{newRow}}
 		<!-- ADD ROW PART -->
 		<table class="table-striped table-hover table-bordered table-condensed" ng-show="showAddRowCols" ng-init="newRow={}">
-		  <tr><td class="span2"  ng-repeat="column in columns | filter: '!id' | filter: '!last_updated'">{{column}}</td></tr>
-		  <tr><td ng-repeat="column in columns | filter: '!id' | filter: '!last_updated'"><input type="text" ng-model=newRow[column]></td>
+		  <tr><td class="span2"  ng-repeat="column in columns | filter: '!id' | filter: '!last_updated'">{{column.colName}}</td></tr>
+		  <tr><td ng-repeat="column in columns | filter: '!id' | filter: '!last_updated'">
+			<input ng-show="!column.isForeignKey" type="text" ng-model=newRow[column.colName]>
+			<select ng-show="column.isForeignKey" ng-model="newRow[column.colName]">
+				<option value={{value}} ng-repeat="(key, value) in column.foreignKeyValues">{{key}}</option>
+			</td>
 
 			<td>
 			  <button ng-click="post(table, newRow); showAddRowCols = ! showAddRowCols; showAddRow = ! showAddRow">Submit</button>

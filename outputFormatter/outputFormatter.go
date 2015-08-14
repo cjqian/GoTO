@@ -21,21 +21,23 @@ outputFormatter contains:
     * Version, which is the version of the API
 * MakeWrapper(r interface{}), which wraps r into a struct to encode
 	*****************************************************************/
+import "fmt"
 
 type ApiWrapper struct {
-	Resp    interface{}     `json:"response"`
-	Cols    []ColumnWrapper `json:"columns"`
-	Error   string          `json:"error"`
-	IsTable bool            `json:"isTable"`
-	Version float64         `json:"version"`
+	Resp        interface{}     `json:"response"`
+	Cols        []Column        `json:"columns"`
+	ColWrappers []ColumnWrapper `json:"colWrappers"`
+	Error       string          `json:"error"`
+	IsTable     bool            `json:"isTable"`
+	Version     float64         `json:"version"`
 }
 
 //wraps the given interface r into a returned Wrapper
 //prepped for encoding to stream
-func MakeApiWrapper(r interface{}, c []string, ca []string, err string, isTable bool) ApiWrapper {
+func MakeApiWrapper(r interface{}, c []string, ca []string, cm map[string]map[string]interface{}, err string, isTable bool) ApiWrapper {
 	//version is hard coded to "1.1"
 	//all of this is variable
-	w := ApiWrapper{r, MakeColumnWrapper(c, ca), err, isTable, 1.1}
+	w := ApiWrapper{r, MakeColumns(c, cm), MakeColumnWrappers(ca), err, isTable, 1.1}
 	return w
 }
 
@@ -45,12 +47,34 @@ type ColumnWrapper struct {
 	ColumnFilter bool   `json:"columnFilter"`
 }
 
-func MakeColumnWrapper(columns []string, columnAlias []string) []ColumnWrapper {
+type Column struct {
+	Name             string                 `json:"colName"`
+	ForeignKey       bool                   `json:"isForeignKey"`
+	ForeignKeyValues map[string]interface{} `json:"foreignKeyValues"`
+}
+
+func MakeColumns(columns []string, fkMap map[string]map[string]interface{}) []Column {
+	c := make([]Column, 0)
+
+	for _, column := range columns {
+		var w Column
+		if fkMapVals, ok := fkMap[column]; ok {
+			w = Column{column, true, fkMapVals}
+		} else {
+			w = Column{column, false, nil}
+		}
+		c = append(c, w)
+	}
+	return c
+}
+
+func MakeColumnWrappers(columns []string) []ColumnWrapper {
 	cw := make([]ColumnWrapper, 0)
-	for idx, column := range columns {
-		w := ColumnWrapper{column, columnAlias[idx], true}
+	for _, column := range columns {
+		w := ColumnWrapper{column, column, true}
 		cw = append(cw, w)
 	}
 
+	fmt.Println(cw)
 	return cw
 }

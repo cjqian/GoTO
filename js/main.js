@@ -1,6 +1,7 @@
 angular.module('app', ['ngReactGrid'])
 
 .controller('InitCtrl', function($scope, $http, $log, ngReactGridCheckbox) {
+    var ipAddress = "10.252.53.120";
     //initialization
     $scope.grid = {
         data: [],
@@ -14,7 +15,7 @@ angular.module('app', ['ngReactGrid'])
     });
     //get list of tables
     function getTableList() {
-        $http.get('http://127.0.0.1:8080/request/').then(function(resp) {
+        $http.get('http://' + ipAddress + ':8080/request/').then(function(resp) {
             $scope.tables = resp.data;
         }, function(err) {
             console.error('ERR', err);
@@ -22,6 +23,8 @@ angular.module('app', ['ngReactGrid'])
     }
 
     function setTable(data) {
+		$scope.newRow = {}
+
         if (data.error != "") {
             alert(data.error);
         }
@@ -32,20 +35,12 @@ angular.module('app', ['ngReactGrid'])
         //set grid
         $scope.grid = {
             data: data.response,
-            columnDefs: data.columns.concat(checkboxGrid),
-			horizontalScroll: true
+            columnDefs: data.colWrappers.concat(checkboxGrid),
+            horizontalScroll: true
         }
+
         $scope.isTable = data.isTable;
-
-        //set columns for add row, edit row, etc
-        var columns = [];
-        for (var i = 0; i < data.columns.length; i++) {
-            columns.push(data.columns[i].field);
-        }
-
-        $scope.columns = columns;
-
-        //$scope.clearCheckboxes();
+        $scope.columns = data.columns;
     }
 
     $scope.clearCheckboxes = function() {
@@ -54,7 +49,7 @@ angular.module('app', ['ngReactGrid'])
 
     //GET
     $scope.get = function(table) {
-        $http.get('http://127.0.0.1:8080/api/' + table).then(function(resp) {
+        $http.get('http://' + ipAddress + ':8080/api/' + table).then(function(resp) {
             setTable(resp.data);
         }, function(err) {
             console.error('ERR', err);
@@ -67,7 +62,7 @@ angular.module('app', ['ngReactGrid'])
         var tableName = angular.copy(table);
 
         if (typeof parameters !== 'undefined') {
-            $http.get('http://127.0.0.1:8080/api/' + tableName + "?" + parameters).then(function(resp) {
+            $http.get('http://' + ipAddress + ':8080/api/' + tableName + "?" + parameters).then(function(resp) {
                 setTable(resp.data);
             }, function(err) {
                 console.error('ERR', err);
@@ -80,7 +75,7 @@ angular.module('app', ['ngReactGrid'])
     //DELETE
     $scope.delete = function(table, rows) {
         for (var i = 0; i < rows.length; i++) {
-            $http.delete('http://127.0.0.1:8080/api/' + table + "/" + rows[i].id).then(function(resp) {
+            $http.delete('http://' + ipAddress + ':8080/api/' + table + "/" + rows[i].id).then(function(resp) {
                 setTable(resp.data);
             }, function(err) {
                 console.error('ERR', err);
@@ -90,7 +85,7 @@ angular.module('app', ['ngReactGrid'])
 
     //DELETE
     $scope.deleteView = function(table) {
-        $http.delete('http://127.0.0.1:8080/api/' + table).then(function(resp) {
+        $http.delete('http://' + ipAddress + ':8080/api/' + table).then(function(resp) {
             if (resp.data.error != "") {
                 alert(resp.data.error);
             }
@@ -110,7 +105,7 @@ angular.module('app', ['ngReactGrid'])
     $scope.postView = function(newView) {
         var viewArray = new Array(newView);
 
-        $http.post('http://127.0.0.1:8080/api/', viewArray).then(function(resp) {
+        $http.post('http://' + ipAddress + ':8080/api/', viewArray).then(function(resp) {
             if (resp.data.error != "") {
                 alert(resp.data.error);
             }
@@ -124,7 +119,7 @@ angular.module('app', ['ngReactGrid'])
     $scope.post = function(table, row) {
         var rowArray = new Array(row);
 
-        $http.post('http://127.0.0.1:8080/api/' + table, rowArray).then(function(resp) {
+        $http.post('http://' + ipAddress + ':8080/api/' + table, rowArray).then(function(resp) {
             setTable(resp.data);
         }, function(err) {
             console.error('ERR', err);
@@ -134,11 +129,10 @@ angular.module('app', ['ngReactGrid'])
     //PUT
     $scope.put = function(table, row) {
         var rowArray = new Array(row);
-        $http.put('http://127.0.0.1:8080/api/' + table + "/" + row.id, rowArray).then(function(resp) {
+        $http.put('http://' + ipAddress + ':8080/api/' + table + "/" + row.id, rowArray).then(function(resp) {
             setTable(resp.data);
         }, function(err) {
             console.error('ERR', err);
         })
-        console.log("hello");
     }
 })

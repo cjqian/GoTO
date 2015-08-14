@@ -47,7 +47,6 @@ func InitializeDatabase(username string, password string, environment string) sq
 	tableMap = GetTableMap()
 	colTypeMap = GetColTypeMap()
 	foreignKeyMap = GetForeignKeyMap()
-
 	return *db
 }
 
@@ -111,27 +110,31 @@ func GetColumnNames(tableName string) []string {
 	return colNames
 }
 
-//returns array of column names from table in database
-func GetColumnAlias(tableName string) []string {
+func GetForeignKeyColumns(tableName string) ([]string, map[string]map[string]interface{}) {
 	tableCols := GetColumnNames(tableName)
-	/*
-		newTableCols := make([]string, 0)
-
-		for _, col := range tableCols {
-			if val, ok := foreignKeyMap[col]; ok {
-				newTableCols = append(newTableCols, val.Alias)
-			} else {
-				newTableCols = append(newTableCols, col)
-			}
+	foreignKeyRows := make(map[string]map[string]interface{}, 0)
+	for idx, col := range tableCols {
+		if val, ok := foreignKeyMap[col]; ok {
+			tableCols[idx] = val.Alias
+			foreignKeyRows[col] = val.ColValues
 		}
-	*/
+	}
+	return tableCols, foreignKeyRows
+}
+
+func GetForeignKeyRows(tableName string) map[string]map[string]interface{} {
+	tableCols := GetColumnNames(tableName)
+	foreignKeyRows := make(map[string]map[string]interface{}, 0)
 
 	for idx, col := range tableCols {
 		if val, ok := foreignKeyMap[col]; ok {
 			tableCols[idx] = val.Alias
+			foreignKeyRow := val.ColValues
+			foreignKeyRows[col] = foreignKeyRow
 		}
 	}
-	return tableCols
+	return foreignKeyRows
+
 }
 
 /*********************************************************************************
@@ -183,50 +186,24 @@ func RunDeleteQuery(serverTableName string, parameters []string) error {
 /*********************************************************************************
  * GET FUNCTIONALITY
  ********************************************************************************/
-//returns interface from given table OR view from queried database
-func GetOld(tableName string, tableParams []string) ([]map[string]interface{}, error) {
-	//if where exists, append
-	whereStmt := ""
-	if len(tableParams) > 0 {
-		whereStmt += " where "
 
-		for _, v := range tableParams {
-			whereStmt += v + " and "
-		}
-
-		whereStmt = whereStmt[:len(whereStmt)-4]
-	}
-
-	//do the query
-	rows, err := globalDB.Queryx("SELECT * from " + tableName + whereStmt)
-	if err != nil {
-		return nil, err
-	}
-
+func GetForeignKeyValues(tableName string, colName string) map[string]interface{} {
 	//map into an array of type map[colName]value
-	rowArray := make([]map[string]interface{}, 0)
+	query := "select " + colName + ", id from " + tableName
+	rows, err := globalDB.Queryx(query)
+	check(err)
+	//map into an array of type map[colName]value
+	rowArray := make(map[string]interface{}, 0)
 
 	for rows.Next() {
-		results := make(map[string]interface{}, 0)
-		err = rows.MapScan(results)
-		if err != nil {
-			return nil, err
-		}
-
-		for k, v := range results {
-			//converts the byte array to its correct type
-			if b, ok := v.([]byte); ok {
-				results[k], err = StringToType(b, colTypeMap[k])
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-
-		rowArray = append(rowArray, results)
+		cols, err := rows.SliceScan()
+		check(err)
+		name := string(cols[0].([]byte))
+		id := string(cols[1].([]byte))
+		rowArray[name] = id
 	}
 
-	return rowArray, nil
+	return rowArray
 }
 
 func Get(tableName string) ([]map[string]interface{}, error) {
@@ -257,7 +234,6 @@ func Get(tableName string) ([]map[string]interface{}, error) {
 	queryStr := "select " + regStr + joinStr + " from " + tableName + " "
 
 	queryStr += onStr
-	fmt.Println(queryStr)
 	//do the query
 	rows, err := globalDB.Queryx(queryStr)
 	if err != nil {
@@ -334,7 +310,7 @@ func AddRow(newRow interface{}, tableName string) error {
 
 	query += keyStr + ") VALUES ( " + valueStr + " );"
 	_, err := globalDB.Query(query)
-
+	fmt.Println(query)
 	return err
 }
 

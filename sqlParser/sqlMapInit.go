@@ -6,64 +6,72 @@ import (
 )
 
 type ForeignKey struct {
-	Table  string
-	Column string
-	Alias  string
+	Table     string
+	Column    string
+	Alias     string
+	ColValues map[string]interface{}
+	//ColValues map[string]int
+}
+
+func MakeForeignKey(table string, column string, alias string) ForeignKey {
+	colValues := GetForeignKeyValues(table, column)
+	key := ForeignKey{table, column, alias, colValues}
+	return key
 }
 
 func GetForeignKeyMap() map[string]ForeignKey {
 	ForeignKeyMap := make(map[string]ForeignKey)
 
 	//cachegroup.name
-	key := ForeignKey{"cachegroup", "name", "cachegroup"}
+	key := MakeForeignKey("cachegroup", "name", "cachegroup")
 	ForeignKeyMap["cachegroup"] = key
 
 	//deliveryservice.xml_id
-	key = ForeignKey{"deliveryservice", "xml_id", "deliveryservice"}
+	key = MakeForeignKey("deliveryservice", "xml_id", "deliveryservice")
 	ForeignKeyMap["deliveryservice"] = key
 	ForeignKeyMap["job_deliveryservice"] = key
 
 	//division.name
-	key = ForeignKey{"division", "name", "division_name"}
+	key = MakeForeignKey("division", "name", "division_name")
 	ForeignKeyMap["division"] = key
 
 	//parameter.name
-	key = ForeignKey{"parameter", "name", "parameter_name"}
+	key = MakeForeignKey("parameter", "name", "parameter_name")
 	ForeignKeyMap["parameter"] = key
 
 	//phys_location.name!!
-	key = ForeignKey{"phys_location", "name", "phys_location"}
+	key = MakeForeignKey("phys_location", "name", "phys_location")
 	ForeignKeyMap["phys_location"] = key
 
 	//profile.name
-	key = ForeignKey{"profile", "name", "profile_name"}
+	key = MakeForeignKey("profile", "name", "profile_name")
 	ForeignKeyMap["profile"] = key
 
 	//regex.pattern
-	key = ForeignKey{"regex", "pattern", "regex_pattern"}
+	key = MakeForeignKey("regex", "pattern", "regex_pattern")
 	ForeignKeyMap["regex"] = key
 
 	//region.name
-	key = ForeignKey{"region", "name", "region"}
+	key = MakeForeignKey("region", "name", "region")
 	ForeignKeyMap["region"] = key
 
 	//status.name
-	key = ForeignKey{"status", "name", "status"}
+	key = MakeForeignKey("status", "name", "status")
 	ForeignKeyMap["status"] = key
 
 	//server.host_name
-	key = ForeignKey{"server", "host_name", "server_name"}
+	key = MakeForeignKey("server", "host_name", "server_name")
 	ForeignKeyMap["serverid"] = key
 	ForeignKeyMap["server"] = key
 
 	//tm_user.username
-	key = ForeignKey{"tm_user", "username", "tm_user_name"}
+	key = MakeForeignKey("tm_user", "username", "tm_user_name")
 	ForeignKeyMap["tm_user"] = key
 	ForeignKeyMap["tm_user_id"] = key
 	ForeignKeyMap["job_user"] = key
 
 	//type.name
-	key = ForeignKey{"type", "name", "type"}
+	key = MakeForeignKey("type", "name", "type")
 	ForeignKeyMap["type"] = key
 	return ForeignKeyMap
 }
